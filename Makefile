@@ -9,3 +9,6 @@ destroy:
 
 migrate:
 	migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) up
+
+updater:
+	go run ./cmd/updater
