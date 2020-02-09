@@ -25,6 +25,9 @@ INSERT INTO offer (hardware_id, datacenter_id, status)
     AS data(hardware, datacenter, availability)
     JOIN hardware ON hardware.code = data.hardware
     JOIN datacenter ON datacenter.code = data.datacenter
+    EXCEPT
+      SELECT hardware_id, datacenter_id, status
+        FROM offer
   ON CONFLICT (datacenter_id, hardware_id)
     DO UPDATE
       SET status = EXCLUDED.status, updated_at = NOW()

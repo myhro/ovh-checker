@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS offer (
-  id BIGSERIAL PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   hardware_id INTEGER REFERENCES hardware(id),
   datacenter_id INTEGER REFERENCES datacenter(id),
   status TEXT,
