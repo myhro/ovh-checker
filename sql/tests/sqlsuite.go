@@ -2,8 +2,10 @@ package sqlsuite
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -19,7 +21,7 @@ func NewDB() *sqlx.DB {
 
 	db, err := postgres.New()
 	if err != nil {
-		log.Fatal("postgres: ", err)
+		log.Fatal("NewDB: ", err)
 	}
 
 	return db
@@ -28,7 +30,7 @@ func NewDB() *sqlx.DB {
 func NewMigrate() *migrate.Migrate {
 	mig, err := migrate.New("file://../migrations", "postgres:///ovh_test?sslmode=disable")
 	if err != nil {
-		log.Fatal("migrate: ", err)
+		log.Fatal("NewMigrate: ", err)
 	}
 	return mig
 }
@@ -37,7 +39,15 @@ func NewQueries(file string) goyesql.Queries {
 	file = fmt.Sprintf("../%v.sql", file)
 	queries, err := goyesql.ParseFile(file)
 	if err != nil {
-		log.Fatal("goyesql: ", err)
+		log.Fatal("NewQueries: ", err)
 	}
 	return queries
+}
+
+func ReadFile(file string) string {
+	content, err := ioutil.ReadFile(path.Join("testdata/", file))
+	if err != nil {
+		log.Fatal("ReadFile: ", err)
+	}
+	return string(content)
 }

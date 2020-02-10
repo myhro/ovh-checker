@@ -29,7 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	queries, err := goyesql.ParseFile("sql/json.sql")
+	queries, err := goyesql.ParseFile("sql/offer.sql")
 	if err != nil {
 		log.Fatal(err)
 	}
