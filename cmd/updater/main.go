@@ -1,33 +1,21 @@
 package main
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/myhro/ovh-checker/postgres"
 	"github.com/nleof/goyesql"
 )
 
-var db *sql.DB
+func main() {
+	url := "https://www.ovh.com/engine/api/dedicated/server/availabilities?country=pt"
 
-func init() {
-	conn, ok := os.LookupEnv("POSTGRES_CONN")
-	if !ok {
-		conn = "dbname=ovh sslmode=disable"
-	}
-
-	var err error
-	db, err = sql.Open("postgres", conn)
+	db, err := postgres.New()
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func main() {
-	url := "https://www.ovh.com/engine/api/dedicated/server/availabilities?country=pt"
 
 	log.Print("Fetching servers availability")
 	resp, err := http.Get(url)
