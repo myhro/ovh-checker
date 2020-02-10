@@ -1,10 +1,10 @@
 -- name: available
-SELECT DISTINCT ON (hardware.code) offer.id, region.name AS region, server.name AS server, hardware.code
+SELECT DISTINCT ON (hardware.code) offer.id, country.name AS country, server.name AS server, hardware.code
   FROM offer
   JOIN hardware ON hardware.id = hardware_id
   JOIN datacenter ON datacenter.id = datacenter_id
   JOIN server ON server.id = hardware.server_id
-  JOIN region ON region.id = datacenter.region_id
+  JOIN country ON country.id = datacenter.country_id
   WHERE offer.status != 'unavailable'
   ORDER BY hardware.code
 ;

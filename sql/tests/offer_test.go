@@ -35,10 +35,10 @@ func (s *OfferTestSuite) TearDownSuite() {
 }
 
 type Available struct {
-	ID     int
-	Region string
-	Server string
-	Code   string
+	ID      int
+	Country string
+	Server  string
+	Code    string
 }
 
 func (s *OfferTestSuite) TestAvailable() {
@@ -50,8 +50,12 @@ func (s *OfferTestSuite) TestAvailable() {
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, len(offers))
 
+	if len(offers) < 1 {
+		return
+	}
+
 	o := offers[0]
-	assert.Equal(s.T(), "Europe", o.Region)
+	assert.Equal(s.T(), "France", o.Country)
 	assert.Equal(s.T(), "KS-1", o.Server)
 	assert.Equal(s.T(), "1801sk12", o.Code)
 }
