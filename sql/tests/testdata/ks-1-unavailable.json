@@ -1,0 +1,68 @@
+[
+  {
+    "datacenters": [
+      {
+        "datacenter": "default",
+        "availability": "unavailable"
+      },
+      {
+        "datacenter": "gra",
+        "availability": "unavailable"
+      },
+      {
+        "datacenter": "sbg",
+        "availability": "unavailable"
+      },
+      {
+        "availability": "unavailable",
+        "datacenter": "rbx"
+      },
+      {
+        "availability": "unavailable",
+        "datacenter": "waw"
+      },
+      {
+        "datacenter": "fra",
+        "availability": "unavailable"
+      },
+      {
+        "availability": "unavailable",
+        "datacenter": "lon"
+      }
+    ],
+    "hardware": "1801sk12",
+    "region": "europe"
+  },
+  {
+    "datacenters": [
+      {
+        "datacenter": "vin",
+        "availability": "unavailable"
+      },
+      {
+        "datacenter": "hil",
+        "availability": "unavailable"
+      },
+      {
+        "availability": "unavailable",
+        "datacenter": "bhs"
+      }
+    ],
+    "region": "northAmerica",
+    "hardware": "1801sk12"
+  },
+  {
+    "datacenters": [
+      {
+        "availability": "unavailable",
+        "datacenter": "sgp"
+      },
+      {
+        "datacenter": "syd",
+        "availability": "unavailable"
+      }
+    ],
+    "hardware": "1801sk12",
+    "region": "apac"
+  }
+]

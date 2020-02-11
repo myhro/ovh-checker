@@ -16,5 +16,8 @@ migrate:
 test:
 	go test -v ./...
 
+test-single:
+	go test -v ./... -testify.m $(name)
+
 updater:
 	go run ./cmd/updater
