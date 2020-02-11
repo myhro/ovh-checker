@@ -22,6 +22,7 @@ SELECT DISTINCT ON (notification.id)
     notification.id,
     auth.email,
     server.name AS server,
+    processor.name AS processor,
     server.cores,
     server.threads,
     server.memory,
@@ -30,14 +31,15 @@ SELECT DISTINCT ON (notification.id)
     hardware.code AS hardware
   FROM notification
   JOIN auth ON auth.id = notification.auth_id
-  JOIN datacenter ON datacenter.country_id = notification.country_id
-  JOIN server ON server.id = notification.server_id
-  JOIN storage ON storage.id = server.storage_id
   JOIN country ON country.id = notification.country_id
-  JOIN hardware ON hardware.server_id = notification.server_id
-  JOIN offer ON offer.hardware_id = hardware.id
+  JOIN datacenter ON datacenter.country_id = country.id
+  JOIN server ON server.id = notification.server_id
+  JOIN processor ON processor.id = server.processor_id
+  JOIN storage ON storage.id = server.storage_id
+  JOIN offer ON offer.datacenter_id = datacenter.id
+  JOIN hardware ON hardware.id = offer.hardware_id
   WHERE offer.status != 'unavailable'
-    AND offer.datacenter_id = datacenter.id
+    AND notification.server_id = hardware.server_id
     AND (
       notification.sent_at IS NULL
       OR (

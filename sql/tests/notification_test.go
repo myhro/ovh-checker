@@ -36,15 +36,16 @@ func (s *NotificationTestSuite) TearDownTest() {
 }
 
 type Notification struct {
-	ID       int
-	Email    string
-	Server   string
-	Cores    int
-	Threads  int
-	Memory   int
-	Storage  string
-	Country  string
-	Hardware string
+	ID        int
+	Email     string
+	Server    string
+	Processor string
+	Cores     int
+	Threads   int
+	Memory    int
+	Storage   string
+	Country   string
+	Hardware  string
 }
 
 func (s *NotificationTestSuite) TestAddNotification() {
@@ -60,6 +61,8 @@ func (s *NotificationTestSuite) TestAddNotification() {
 func (s *NotificationTestSuite) TestPendingNotification() {
 	email := AddRandomUser()
 	_, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "fr", false)
+	assert.NoError(s.T(), err)
+	_, err = s.db.Exec(s.queries["add-notification"], email, "KS-2", "fr", false)
 	assert.NoError(s.T(), err)
 
 	LoadOffers("ks-1-eu.json")
