@@ -48,7 +48,7 @@ func main() {
 				log.Print(err)
 				continue
 			}
-			log.Print("Marked as sent to ", n.ID)
+			log.Print("Marked as sent to user ", n.ID)
 		}
 
 		sleep()

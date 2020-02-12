@@ -41,9 +41,9 @@ func sendEmail(notif notification.PendingNotification) error {
 	resp, err := client.Send(message)
 	if err != nil {
 		return err
-	} else if resp.StatusCode == http.StatusAccepted {
-		return nil
+	} else if resp.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("%v %v", resp.StatusCode, resp.Body)
 	}
 
-	return fmt.Errorf("%v %v", resp.StatusCode, resp.Body)
+	return nil
 }
