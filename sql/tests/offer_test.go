@@ -23,9 +23,9 @@ func TestOfferTestSuite(t *testing.T) {
 }
 
 func (s *OfferTestSuite) SetupSuite() {
-	s.db = NewDB()
-	s.mig = NewMigrate()
-	s.queries = NewQueries("offer")
+	s.db = newDB()
+	s.mig = newMigrate()
+	s.queries = newQueries("offer")
 
 	s.mig.Up()
 }
@@ -42,7 +42,7 @@ type Available struct {
 }
 
 func (s *OfferTestSuite) TestAvailable() {
-	_, err := s.db.Exec(s.queries["import-json"], ReadFile("ks-1-eu.json"))
+	_, err := s.db.Exec(s.queries["import-json"], readFile("ks-1-eu.json"))
 	assert.NoError(s.T(), err)
 
 	offers := []Available{}
@@ -61,6 +61,6 @@ func (s *OfferTestSuite) TestAvailable() {
 }
 
 func (s *OfferTestSuite) TestImportJSON() {
-	_, err := s.db.Exec(s.queries["import-json"], ReadFile("ks-1-eu.json"))
+	_, err := s.db.Exec(s.queries["import-json"], readFile("ks-1-eu.json"))
 	assert.NoError(s.T(), err)
 }

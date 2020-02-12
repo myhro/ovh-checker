@@ -24,9 +24,9 @@ func TestAuthTestSuite(t *testing.T) {
 }
 
 func (s *AuthTestSuite) SetupSuite() {
-	s.db = NewDB()
-	s.mig = NewMigrate()
-	s.queries = NewQueries("auth")
+	s.db = newDB()
+	s.mig = newMigrate()
+	s.queries = newQueries("auth")
 
 	s.mig.Up()
 }

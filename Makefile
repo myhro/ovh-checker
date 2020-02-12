@@ -10,6 +10,9 @@ create:
 destroy:
 	migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) down
 
+lint:
+	@golint -set_exit_status ./...
+
 migrate:
 	migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) up
 

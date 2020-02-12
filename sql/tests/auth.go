@@ -6,15 +6,15 @@ import (
 	"github.com/icrowley/fake"
 )
 
-func AddRandomUser() string {
+func addRandomUser() string {
 	email := fake.EmailAddress()
-	AddUser(email)
+	addUser(email)
 	return email
 }
 
-func AddUser(email string) {
-	db := NewDB()
-	queries := NewQueries("auth")
+func addUser(email string) {
+	db := newDB()
+	queries := newQueries("auth")
 	_, err := db.Exec(queries["add-user"], email, fake.SimplePassword())
 	if err != nil {
 		log.Fatal("AddUser: ", err)

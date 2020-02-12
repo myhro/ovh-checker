@@ -24,9 +24,9 @@ func TestNotificationTestSuite(t *testing.T) {
 }
 
 func (s *NotificationTestSuite) SetupTest() {
-	s.db = NewDB()
-	s.mig = NewMigrate()
-	s.queries = NewQueries("notification")
+	s.db = newDB()
+	s.mig = newMigrate()
+	s.queries = newQueries("notification")
 
 	s.mig.Up()
 }
@@ -49,7 +49,7 @@ type Notification struct {
 }
 
 func (s *NotificationTestSuite) TestAddNotification() {
-	email := AddRandomUser()
+	email := addRandomUser()
 	res, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "ca", false)
 	assert.NoError(s.T(), err)
 
@@ -59,13 +59,13 @@ func (s *NotificationTestSuite) TestAddNotification() {
 }
 
 func (s *NotificationTestSuite) TestPendingNotification() {
-	email := AddRandomUser()
+	email := addRandomUser()
 	_, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "fr", false)
 	assert.NoError(s.T(), err)
 	_, err = s.db.Exec(s.queries["add-notification"], email, "KS-2", "fr", false)
 	assert.NoError(s.T(), err)
 
-	LoadOffers("ks-1-eu.json")
+	loadOffers("ks-1-eu.json")
 
 	res := []Notification{}
 	err = s.db.Select(&res, s.queries["pending-notifications"])
@@ -74,11 +74,11 @@ func (s *NotificationTestSuite) TestPendingNotification() {
 }
 
 func (s *NotificationTestSuite) TestMarkedAsSentNotification() {
-	email := AddRandomUser()
+	email := addRandomUser()
 	_, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "fr", false)
 	assert.NoError(s.T(), err)
 
-	LoadOffers("ks-1-eu.json")
+	loadOffers("ks-1-eu.json")
 
 	res1 := []Notification{}
 	err = s.db.Select(&res1, s.queries["pending-notifications"])
@@ -95,19 +95,19 @@ func (s *NotificationTestSuite) TestMarkedAsSentNotification() {
 }
 
 func (s *NotificationTestSuite) TestRecurrentNotification() {
-	email := AddRandomUser()
+	email := addRandomUser()
 	_, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "fr", true)
 	assert.NoError(s.T(), err)
 
-	LoadOffers("ks-1-unavailable.json")
+	loadOffers("ks-1-unavailable.json")
 
 	res1 := []Notification{}
 	err = s.db.Select(&res1, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, len(res1))
 
-	hour_ago := time.Now().Add(-1 * time.Hour)
-	_, err = s.db.Exec(s.queries["mark-as-sent"], hour_ago, 1)
+	hourAgo := time.Now().Add(-1 * time.Hour)
+	_, err = s.db.Exec(s.queries["mark-as-sent"], hourAgo, 1)
 	assert.NoError(s.T(), err)
 
 	res2 := []Notification{}
@@ -115,7 +115,7 @@ func (s *NotificationTestSuite) TestRecurrentNotification() {
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, len(res2))
 
-	LoadOffers("ks-1-eu.json")
+	loadOffers("ks-1-eu.json")
 
 	res3 := []Notification{}
 	err = s.db.Select(&res3, s.queries["pending-notifications"])

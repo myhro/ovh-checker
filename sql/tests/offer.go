@@ -4,10 +4,10 @@ import (
 	"log"
 )
 
-func LoadOffers(file string) {
-	db := NewDB()
-	queries := NewQueries("offer")
-	_, err := db.Exec(queries["import-json"], ReadFile(file))
+func loadOffers(file string) {
+	db := newDB()
+	queries := newQueries("offer")
+	_, err := db.Exec(queries["import-json"], readFile(file))
 	if err != nil {
 		log.Fatal("LoadOffers: ", err)
 	}

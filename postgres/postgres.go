@@ -4,9 +4,11 @@ import (
 	"os"
 
 	"github.com/jmoiron/sqlx"
+	// Load Postgres driver
 	_ "github.com/lib/pq"
 )
 
+// New creates a Postgres database handler
 func New() (*sqlx.DB, error) {
 	conn := os.Getenv("POSTGRES_CONN")
 	if conn == "" {
