@@ -16,6 +16,9 @@ lint:
 migrate:
 	migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) up
 
+notifier:
+	go run ./cmd/notifier
+
 test:
 	go test -v ./...
 

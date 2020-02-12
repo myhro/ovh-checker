@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jmoiron/sqlx"
+	"github.com/myhro/ovh-checker/notification"
 	"github.com/nleof/goyesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -35,19 +36,6 @@ func (s *NotificationTestSuite) TearDownTest() {
 	s.mig.Down()
 }
 
-type Notification struct {
-	ID        int
-	Email     string
-	Server    string
-	Processor string
-	Cores     int
-	Threads   int
-	Memory    int
-	Storage   string
-	Country   string
-	Hardware  string
-}
-
 func (s *NotificationTestSuite) TestAddNotification() {
 	email := addRandomUser()
 	res, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "ca", false)
@@ -67,7 +55,7 @@ func (s *NotificationTestSuite) TestPendingNotification() {
 
 	loadOffers("ks-1-eu.json")
 
-	res := []Notification{}
+	res := []notification.PendingNotification{}
 	err = s.db.Select(&res, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, len(res))
@@ -80,7 +68,7 @@ func (s *NotificationTestSuite) TestMarkedAsSentNotification() {
 
 	loadOffers("ks-1-eu.json")
 
-	res1 := []Notification{}
+	res1 := []notification.PendingNotification{}
 	err = s.db.Select(&res1, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, len(res1))
@@ -88,7 +76,7 @@ func (s *NotificationTestSuite) TestMarkedAsSentNotification() {
 	_, err = s.db.Exec(s.queries["mark-as-sent"], time.Now(), 1)
 	assert.NoError(s.T(), err)
 
-	res2 := []Notification{}
+	res2 := []notification.PendingNotification{}
 	err = s.db.Select(&res2, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, len(res2))
@@ -101,7 +89,7 @@ func (s *NotificationTestSuite) TestRecurrentNotification() {
 
 	loadOffers("ks-1-unavailable.json")
 
-	res1 := []Notification{}
+	res1 := []notification.PendingNotification{}
 	err = s.db.Select(&res1, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, len(res1))
@@ -110,14 +98,14 @@ func (s *NotificationTestSuite) TestRecurrentNotification() {
 	_, err = s.db.Exec(s.queries["mark-as-sent"], hourAgo, 1)
 	assert.NoError(s.T(), err)
 
-	res2 := []Notification{}
+	res2 := []notification.PendingNotification{}
 	err = s.db.Select(&res2, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, len(res2))
 
 	loadOffers("ks-1-eu.json")
 
-	res3 := []Notification{}
+	res3 := []notification.PendingNotification{}
 	err = s.db.Select(&res3, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, len(res3))
