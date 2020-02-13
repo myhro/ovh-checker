@@ -36,7 +36,7 @@ func main() {
 		log.Print("Done")
 
 		for _, n := range res {
-			log.Print("Sending email to user ", n.ID)
+			log.Print("Sending email for notification ", n.ID)
 			err := sendEmail(n)
 			if err != nil {
 				log.Print(err)
@@ -48,7 +48,7 @@ func main() {
 				log.Print(err)
 				continue
 			}
-			log.Print("Marked as sent to user ", n.ID)
+			log.Printf("Notification %v marked as sent", n.ID)
 		}
 
 		sleep()
