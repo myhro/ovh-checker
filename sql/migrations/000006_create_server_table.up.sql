@@ -25,8 +25,8 @@ INSERT INTO server (name, processor_id, cores, threads, memory, storage_id, pric
         ('KS-8', 'Core i7', 4, 8, 16, '2TB', 'HDD', 15.99),
         ('KS-9', 'Xeon', 4, 8, 16, '2x240GB', 'SSD', 16.99),
         ('KS-10', 'Core i5', 4, 4, 16, '2TB', 'HDD', 18.99),
-        ('KS-11', 'Xeon', 4, 8, 16, '2TB', 'HDD', 19.99),
-        ('KS-12', 'Xeon', 4, 8, 32, '2TB', 'HDD', 24.99)
+        ('KS-11', 'Xeon', 4, 8, 16, '2x2TB', 'HDD', 19.99),
+        ('KS-12', 'Xeon', 4, 8, 32, '2x2TB', 'HDD', 24.99)
     )
     AS data(name, processor, cores, threads, memory, disk_code, disk_type, price)
     JOIN processor ON processor.name = data.processor
