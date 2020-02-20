@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/myhro/ovh-checker/notification"
+	"github.com/myhro/ovh-checker/models/notification"
 	"github.com/myhro/ovh-checker/postgres"
 	"github.com/nleof/goyesql"
 )

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/myhro/ovh-checker/notification"
+	"github.com/myhro/ovh-checker/models/notification"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )

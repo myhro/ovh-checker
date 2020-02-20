@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jmoiron/sqlx"
-	"github.com/myhro/ovh-checker/notification"
+	"github.com/myhro/ovh-checker/models/notification"
 	"github.com/nleof/goyesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

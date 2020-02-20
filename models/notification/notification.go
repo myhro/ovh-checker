@@ -1,6 +1,6 @@
 package notification
 
-// PendingNotification DB structure for pending reports
+// PendingNotification DB structure for pending notifications
 type PendingNotification struct {
 	ID        int
 	Email     string
