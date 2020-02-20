@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/myhro/ovh-checker/postgres"
+	"github.com/myhro/ovh-checker/database"
 	"github.com/nleof/goyesql"
 )
 
@@ -33,7 +33,7 @@ func sleep() {
 }
 
 func main() {
-	db, err := postgres.New()
+	db, err := database.New()
 	if err != nil {
 		log.Fatal(err)
 	}

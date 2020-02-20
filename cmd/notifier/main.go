@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/myhro/ovh-checker/database"
 	"github.com/myhro/ovh-checker/models/notification"
-	"github.com/myhro/ovh-checker/postgres"
 	"github.com/nleof/goyesql"
 )
 
@@ -14,7 +14,7 @@ func sleep() {
 }
 
 func main() {
-	db, err := postgres.New()
+	db, err := database.New()
 	if err != nil {
 		log.Fatal(err)
 	}
