@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jmoiron/sqlx"
+	"github.com/myhro/ovh-checker/models/offer"
 	"github.com/nleof/goyesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -34,18 +35,11 @@ func (s *OfferTestSuite) TearDownSuite() {
 	s.mig.Down()
 }
 
-type Available struct {
-	ID      int
-	Country string
-	Server  string
-	Code    string
-}
-
 func (s *OfferTestSuite) TestAvailable() {
 	_, err := s.db.Exec(s.queries["import-json"], readFile("ks-1-eu.json"))
 	assert.NoError(s.T(), err)
 
-	offers := []Available{}
+	offers := []offer.Available{}
 	err = s.db.Select(&offers, s.queries["available"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, len(offers))
