@@ -8,6 +8,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// DB is an interface that allows database handlers to be mocked
+type DB interface {
+	Select(dest interface{}, query string, args ...interface{}) error
+}
+
 // New creates a Postgres database handler
 func New() (*sqlx.DB, error) {
 	conn := os.Getenv("POSTGRES_CONN")
