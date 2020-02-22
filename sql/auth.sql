@@ -9,3 +9,9 @@ SELECT id
   WHERE email = $1
     AND password = crypt($2, password)
 ;
+
+-- name: user-exists
+SELECT TRUE
+  FROM auth
+  WHERE email = $1
+;

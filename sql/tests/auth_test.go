@@ -1,6 +1,7 @@
 package sqlsuite
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -59,7 +60,23 @@ func (s *AuthTestSuite) TestCheckWrongPassword() {
 	_, err := s.db.Exec(s.queries["add-user"], email, fake.SimplePassword())
 	assert.NoError(s.T(), err)
 
-	var id int
-	err = s.db.Get(&id, s.queries["check-password"], email, "p4ssw0rd")
-	assert.Error(s.T(), err)
+	err = s.db.Get(new(int), s.queries["check-password"], email, "p4ssw0rd")
+	assert.Equal(s.T(), sql.ErrNoRows, err)
+}
+
+func (s *AuthTestSuite) TestUserDoesntExists() {
+	err := s.db.Get(new(bool), s.queries["user-exists"], fake.EmailAddress())
+	assert.Equal(s.T(), sql.ErrNoRows, err)
+}
+
+func (s *AuthTestSuite) TestUserExists() {
+	email := fake.EmailAddress()
+
+	_, err := s.db.Exec(s.queries["add-user"], email, fake.SimplePassword())
+	assert.NoError(s.T(), err)
+
+	var exists bool
+	err = s.db.Get(&exists, s.queries["user-exists"], email)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), exists)
 }
