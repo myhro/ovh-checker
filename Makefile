@@ -1,34 +1,57 @@
+API := ./api
+API_BINARY := dist/api
 COVERAGE := coverage.out
 COVERAGE_REPORT := coverage.html
 MIGRATION_FOLDER := sql/migrations/
+NOTIFIER := ./cmd/notifier
+NOTIFIER_BINARY := dist/notifier
 POSTGRES_URL ?= postgres:///ovh?sslmode=disable
+UPDATER := ./cmd/updater
+UPDATER_BINARY := dist/updater
+
+export GOBIN := $(PWD)/.bin
 
 .PHONY: api
 
 api:
-	go run ./api
+	go run $(API)
+
+build: build-api build-notifier build-updater
+
+build-api:
+	go build -o $(API_BINARY) $(API)
+
+build-notifier:
+	go build -o $(NOTIFIER_BINARY) $(NOTIFIER)
+
+build-updater:
+	go build -o $(UPDATER_BINARY) $(UPDATER)
 
 clean:
 	go clean -testcache
-	rm -f $(COVERAGE) $(COVERAGE_REPORT)
+	rm -rf dist/ $(COVERAGE) $(COVERAGE_REPORT)
 
 coverage:
 	go tool cover -html=$(COVERAGE) -o $(COVERAGE_REPORT)
 
 create:
-	migrate create -dir $(MIGRATION_FOLDER) -ext sql -seq $(name)
+	@$(GOBIN)/migrate create -dir $(MIGRATION_FOLDER) -ext sql -seq $(name)
+
+deps:
+	go install golang.org/x/lint/golint
+	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate
 
 destroy:
-	migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) down
+	@$(GOBIN)/migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) down
 
 lint:
-	@golint -set_exit_status ./...
+	@$(GOBIN)/golint -set_exit_status ./...
 
 migrate:
-	migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) up
+	@$(GOBIN)/migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) up
 
 notifier:
-	go run ./cmd/notifier
+	go run $(NOTIFIER)
 
 test: test-all coverage
 
@@ -39,4 +62,4 @@ test-single:
 	go test -v ./... -testify.m $(name)
 
 updater:
-	go run ./cmd/updater
+	go run $(UPDATER)

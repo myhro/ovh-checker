@@ -1,0 +1,44 @@
+---
+name: Default
+"on": [push]
+jobs:
+  check:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - uses: actions/checkout@v1
+      - name: Check
+        run: |
+          make deps
+          make lint
+  test:
+    needs: check
+    runs-on: ubuntu-18.04
+    services:
+      db:
+        image: postgres:9.6
+        env:
+          POSTGRES_DB: ovh_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_USER: runner
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - uses: actions/checkout@v1
+      - name: Test
+        run: make test
+  build:
+    needs: test
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - uses: actions/checkout@v1
+      - name: Build
+        run: make build
