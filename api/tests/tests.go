@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,7 +14,20 @@ type MockedDatabase struct {
 	mock.Mock
 }
 
-// Select mocks the sqlx.DB Select() method
+// Exec mocks the same sql.DB method
+func (m *MockedDatabase) Exec(q string, a ...interface{}) (sql.Result, error) {
+	var res sql.Result
+	args := m.Called(q, a)
+	return res, args.Error(1)
+}
+
+// Get mocks the same sqlx.DB method
+func (m *MockedDatabase) Get(d interface{}, q string, a ...interface{}) error {
+	args := m.Called(d, q, a)
+	return args.Error(0)
+}
+
+// Select mocks the same sqlx.DB method
 func (m *MockedDatabase) Select(d interface{}, q string, a ...interface{}) error {
 	args := m.Called(d, q, a)
 	return args.Error(0)

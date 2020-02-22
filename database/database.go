@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"os"
 
 	"github.com/jmoiron/sqlx"
@@ -10,6 +11,8 @@ import (
 
 // DB is an interface that allows database handlers to be mocked
 type DB interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Get(dest interface{}, query string, args ...interface{}) error
 	Select(dest interface{}, query string, args ...interface{}) error
 }
 
