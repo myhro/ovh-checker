@@ -59,7 +59,10 @@ test-all:
 	go test -coverprofile $(COVERAGE) -v ./...
 
 test-single:
-	go test -v ./... -testify.m $(name)
+	go test $(folder) -testify.m $(name)
+
+test-suite:
+	go test -v ./... -run $(name)
 
 updater:
 	go run $(UPDATER)

@@ -5,9 +5,18 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestValidationMessage(t *testing.T) {
+type ErrorsTestSuite struct {
+	suite.Suite
+}
+
+func TestErrorsTestSuite(t *testing.T) {
+	suite.Run(t, new(ErrorsTestSuite))
+}
+
+func (s *ErrorsTestSuite) TestValidationMessage() {
 	table := []struct {
 		in  error
 		out string
@@ -31,6 +40,6 @@ func TestValidationMessage(t *testing.T) {
 	}
 
 	for _, tt := range table {
-		assert.Equal(t, tt.out, ValidationMessage(tt.in))
+		assert.Equal(s.T(), tt.out, ValidationMessage(tt.in))
 	}
 }
