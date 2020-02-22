@@ -36,7 +36,7 @@ func (h *Handler) Signup(c *gin.Context) {
 		return
 	}
 
-	err = h.DB.Get(new(bool), h.Queries["user-exists"], req.Email)
+	err = h.DB.Get(new(int), h.Queries["user-exists"], req.Email)
 	if err == nil {
 		errors.BadRequestWithMessage(c, emailError)
 		return

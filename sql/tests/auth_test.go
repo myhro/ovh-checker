@@ -65,7 +65,7 @@ func (s *AuthTestSuite) TestCheckWrongPassword() {
 }
 
 func (s *AuthTestSuite) TestUserDoesntExists() {
-	err := s.db.Get(new(bool), s.queries["user-exists"], fake.EmailAddress())
+	err := s.db.Get(new(int), s.queries["user-exists"], fake.EmailAddress())
 	assert.Equal(s.T(), sql.ErrNoRows, err)
 }
 
@@ -75,8 +75,8 @@ func (s *AuthTestSuite) TestUserExists() {
 	_, err := s.db.Exec(s.queries["add-user"], email, fake.SimplePassword())
 	assert.NoError(s.T(), err)
 
-	var exists bool
-	err = s.db.Get(&exists, s.queries["user-exists"], email)
+	var id int
+	err = s.db.Get(&id, s.queries["user-exists"], email)
 	assert.NoError(s.T(), err)
-	assert.True(s.T(), exists)
+	assert.NotEqual(s.T(), 0, id)
 }

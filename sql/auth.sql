@@ -11,7 +11,7 @@ SELECT id
 ;
 
 -- name: user-exists
-SELECT TRUE
+SELECT id
   FROM auth
   WHERE email = $1
 ;
