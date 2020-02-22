@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -22,16 +21,16 @@ func (m *MockedDatabase) Select(d interface{}, q string, a ...interface{}) error
 
 // Get does an HTTP GET request against an HTTP handler
 func Get(r http.Handler, path string) *httptest.ResponseRecorder {
-	return request(r, "GET", path, nil)
+	req, _ := http.NewRequest("GET", path, nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
 }
 
 // Post does an HTTP POST request against an HTTP handler
 func Post(r http.Handler, path, body string) *httptest.ResponseRecorder {
-	return request(r, "POST", path, strings.NewReader(body))
-}
-
-func request(r http.Handler, method, path string, body io.Reader) *httptest.ResponseRecorder {
-	req, _ := http.NewRequest(method, path, body)
+	req, _ := http.NewRequest("POST", path, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	return w
