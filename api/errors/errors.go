@@ -41,7 +41,9 @@ func ValidationMessage(e error) string {
 			break
 		}
 	}
-	if msg == firstLine {
+	if msg == "EOF" || strings.HasPrefix(msg, "invalid character") {
+		msg = "invalid JSON"
+	} else if msg == firstLine {
 		msg = "unknown error"
 	}
 	msg = strings.ToLower(msg)

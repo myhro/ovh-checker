@@ -34,6 +34,14 @@ func (s *ErrorsTestSuite) TestValidationMessage() {
 			out: "field validation for 'country' failed on the 'required' tag",
 		},
 		{
+			in:  errors.New("invalid character '}' looking for beginning of object key string"),
+			out: "invalid json",
+		},
+		{
+			in:  errors.New("EOF"),
+			out: "invalid json",
+		},
+		{
 			in:  errors.New("not mapped failure"),
 			out: "unknown error",
 		},
