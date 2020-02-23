@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var validToken = base64.StdEncoding.EncodeToString([]byte("user@example.com:xyz"))
+var validTokenHeader = tests.AuthHeader("user@example.com", "xyz")
 
 type AuthRequiredTestSuite struct {
 	suite.Suite
@@ -64,7 +64,7 @@ func (s *AuthRequiredTestSuite) TestCacheError() {
 	s.mini.Close()
 
 	headers := map[string]string{
-		"Authorization": "Token " + validToken,
+		"Authorization": validTokenHeader,
 	}
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
@@ -78,7 +78,7 @@ func (s *AuthRequiredTestSuite) TestDatabaseError() {
 	s.handler.DB = db
 
 	headers := map[string]string{
-		"Authorization": "Token " + validToken,
+		"Authorization": validTokenHeader,
 	}
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
@@ -92,7 +92,7 @@ func (s *AuthRequiredTestSuite) TestExistingUserTokenNotInRedis() {
 	s.handler.DB = db
 
 	headers := map[string]string{
-		"Authorization": "Token " + validToken,
+		"Authorization": validTokenHeader,
 	}
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
@@ -109,7 +109,7 @@ func (s *AuthRequiredTestSuite) TestExistingUserTokenOk() {
 	s.handler.DB = db
 
 	headers := map[string]string{
-		"Authorization": "Token " + validToken,
+		"Authorization": validTokenHeader,
 	}
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
@@ -151,7 +151,7 @@ func (s *AuthRequiredTestSuite) TestNonExistentUser() {
 	s.handler.DB = db
 
 	headers := map[string]string{
-		"Authorization": "Token " + validToken,
+		"Authorization": validTokenHeader,
 	}
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
