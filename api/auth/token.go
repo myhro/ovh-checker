@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
+	"github.com/myhro/ovh-checker/storage"
 	"github.com/satori/go.uuid"
 )
 
@@ -89,7 +90,7 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 	}
 
 	key = tokenKey(id, token)
-	_, err = h.Cache.HSet(key, "last_used", now())
+	_, err = h.Cache.HSet(key, "last_used", storage.Now())
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)

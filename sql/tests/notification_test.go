@@ -7,6 +7,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/jmoiron/sqlx"
 	"github.com/myhro/ovh-checker/models/notification"
+	"github.com/myhro/ovh-checker/storage"
 	"github.com/nleof/goyesql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -73,7 +74,7 @@ func (s *NotificationTestSuite) TestMarkedAsSentNotification() {
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, len(res1))
 
-	_, err = s.db.Exec(s.queries["mark-as-sent"], time.Now(), 1)
+	_, err = s.db.Exec(s.queries["mark-as-sent"], storage.Now(), 1)
 	assert.NoError(s.T(), err)
 
 	res2 := []notification.PendingNotification{}
@@ -94,7 +95,7 @@ func (s *NotificationTestSuite) TestRecurrentNotification() {
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, len(res1))
 
-	hourAgo := time.Now().Add(-1 * time.Hour)
+	hourAgo := time.Now().UTC().Add(-1 * time.Hour)
 	_, err = s.db.Exec(s.queries["mark-as-sent"], hourAgo, 1)
 	assert.NoError(s.T(), err)
 

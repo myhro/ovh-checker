@@ -2,21 +2,17 @@ package auth
 
 import (
 	"sort"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/myhro/ovh-checker/storage"
 )
-
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
-}
 
 func (h *Handler) addToken(id int, token, client, ip string) error {
 	details := map[string]interface{}{
 		"id":         token,
 		"client":     client,
 		"ip":         ip,
-		"created_at": now(),
+		"created_at": storage.Now(),
 	}
 
 	tx := h.Cache.TxPipeline()

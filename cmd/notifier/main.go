@@ -43,7 +43,7 @@ func main() {
 				continue
 			}
 
-			_, err = db.Exec(queries["mark-as-sent"], time.Now(), n.ID)
+			_, err = db.Exec(queries["mark-as-sent"], storage.Now(), n.ID)
 			if err != nil {
 				log.Print(err)
 				continue
