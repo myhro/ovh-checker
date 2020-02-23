@@ -77,7 +77,7 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 	}
 
 	key := tokenSetKey(id)
-	exists, err := h.Cache.SIsMember(key, token).Result()
+	exists, err := h.Cache.SIsMember(key, token)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
@@ -88,7 +88,7 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 	}
 
 	key = tokenKey(id, token)
-	_, err = h.Cache.HSet(key, "last_used", now()).Result()
+	_, err = h.Cache.HSet(key, "last_used", now())
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)

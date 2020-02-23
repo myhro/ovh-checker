@@ -13,7 +13,7 @@ func (h *Handler) User(c *gin.Context) {
 	id := c.GetInt("auth_id")
 
 	key := tokenSetKey(id)
-	count, err := h.Cache.SCard(key).Result()
+	count, err := h.Cache.SCard(key)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)

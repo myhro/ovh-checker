@@ -38,7 +38,7 @@ func (h *Handler) getTokens(c *gin.Context) ([]map[string]string, error) {
 	id := c.GetInt("auth_id")
 	key := tokenSetKey(id)
 
-	members, err := h.Cache.SMembers(key).Result()
+	members, err := h.Cache.SMembers(key)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (h *Handler) getTokens(c *gin.Context) ([]map[string]string, error) {
 	var list []map[string]string
 	for _, token := range members {
 		key := tokenKey(id, token)
-		details, err := h.Cache.HGetAll(key).Result()
+		details, err := h.Cache.HGetAll(key)
 		if err != nil {
 			return nil, err
 		}

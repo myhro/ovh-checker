@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
+	"github.com/myhro/ovh-checker/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -45,7 +46,9 @@ func (s *AuthRequiredTestSuite) SetupTest() {
 	opts := &redis.Options{
 		Addr: s.mini.Addr(),
 	}
-	s.handler.Cache = redis.NewClient(opts)
+	s.handler.Cache = &storage.Redis{
+		Client: redis.NewClient(opts),
+	}
 
 	gin.SetMode(gin.ReleaseMode)
 	s.router = gin.New()
