@@ -27,6 +27,7 @@ func main() {
 	if err != nil {
 		log.Fatal("auth: ", err)
 	}
+	r.POST("/auth/login", authHandler.Login)
 	r.POST("/auth/signup", authHandler.Signup)
 
 	hardwareHandler, err := hardware.NewHandler(db)
