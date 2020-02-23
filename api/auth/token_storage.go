@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/satori/go.uuid"
 )
 
 func now() string {
@@ -58,18 +57,4 @@ func (h *Handler) getTokens(c *gin.Context) ([]map[string]string, error) {
 	})
 
 	return list, nil
-}
-
-func (h *Handler) newToken(c *gin.Context) (string, error) {
-	id := c.GetInt("auth_id")
-	client := c.GetHeader("User-Agent")
-	ip := c.ClientIP()
-	token := uuid.NewV4().String()
-
-	err := h.addToken(id, token, client, ip)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
 }

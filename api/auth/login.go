@@ -36,9 +36,8 @@ func (h *Handler) Login(c *gin.Context) {
 		errors.UnauthorizedWithMessage(c, incorrectEmailPasswordError)
 		return
 	}
-	c.Set("auth_id", id)
 
-	token, err := h.newToken(c)
+	token, err := h.newToken(c, id)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -97,4 +98,17 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 
 	c.Set("auth_id", id)
 	c.Set("email", email)
+}
+
+func (h *Handler) newToken(c *gin.Context, id int) (string, error) {
+	client := c.GetHeader("User-Agent")
+	ip := c.ClientIP()
+	token := uuid.NewV4().String()
+
+	err := h.addToken(id, token, client, ip)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
