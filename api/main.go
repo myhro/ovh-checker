@@ -6,19 +6,30 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/auth"
 	"github.com/myhro/ovh-checker/api/hardware"
+	"github.com/myhro/ovh-checker/storage"
 )
 
 func main() {
 	r := gin.Default()
 	port := ":8080"
 
-	authHandler, err := auth.NewHandler()
+	cache, err := storage.NewCache()
+	if err != nil {
+		log.Fatal("cache: ", err)
+	}
+
+	db, err := storage.NewDB()
+	if err != nil {
+		log.Fatal("database: ", err)
+	}
+
+	authHandler, err := auth.NewHandler(cache, db)
 	if err != nil {
 		log.Fatal("auth: ", err)
 	}
 	r.POST("/auth/signup", authHandler.Signup)
 
-	hardwareHandler, err := hardware.NewHandler()
+	hardwareHandler, err := hardware.NewHandler(db)
 	if err != nil {
 		log.Fatal("hardware: ", err)
 	}

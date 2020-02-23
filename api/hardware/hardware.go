@@ -1,23 +1,18 @@
 package hardware
 
 import (
-	"github.com/myhro/ovh-checker/database"
+	"github.com/myhro/ovh-checker/storage"
 	"github.com/nleof/goyesql"
 )
 
 // Handler holds objects to be reused between requests, like a database connection
 type Handler struct {
-	DB      database.DB
+	DB      storage.DB
 	Queries goyesql.Queries
 }
 
 // NewHandler creates a new Handler
-func NewHandler() (*Handler, error) {
-	db, err := database.New()
-	if err != nil {
-		return nil, err
-	}
-
+func NewHandler(db storage.DB) (*Handler, error) {
 	queries, err := goyesql.ParseFile("sql/hardware.sql")
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
-	"github.com/myhro/ovh-checker/database"
+	"github.com/myhro/ovh-checker/storage"
 	"github.com/nleof/goyesql"
 )
 
@@ -20,7 +20,7 @@ func newDB() *sqlx.DB {
 	os.Setenv("POSTGRES_CONN", "dbname=ovh_test sslmode=disable")
 	defer os.Unsetenv("POSTGRES_CONN")
 
-	db, err := database.New()
+	db, err := storage.NewDB()
 	if err != nil {
 		log.Fatal("NewDB: ", err)
 	}
