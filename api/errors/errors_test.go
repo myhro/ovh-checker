@@ -2,18 +2,76 @@ package errors
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+	"github.com/myhro/ovh-checker/api/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type ErrorsTestSuite struct {
 	suite.Suite
+
+	router *gin.Engine
 }
 
 func TestErrorsTestSuite(t *testing.T) {
 	suite.Run(t, new(ErrorsTestSuite))
+}
+
+func (s *ErrorsTestSuite) SetupSuite() {
+	gin.SetMode(gin.ReleaseMode)
+}
+
+func (s *ErrorsTestSuite) TestBadRequestWithMessage() {
+	msg := "bad request"
+	handler := func(c *gin.Context) {
+		BadRequestWithMessage(c, msg)
+	}
+
+	s.router = gin.New()
+	s.router.GET("/", handler)
+	w := tests.Get(s.router, "/")
+
+	assert.Equal(s.T(), http.StatusBadRequest, w.Code)
+	assert.Regexp(s.T(), "application/json", w.HeaderMap["Content-Type"][0])
+	assert.Regexp(s.T(), "error.*"+msg, w.Body.String())
+}
+
+func (s *ErrorsTestSuite) TestInternalServerError() {
+	handler := func(c *gin.Context) {
+		InternalServerError(c)
+	}
+
+	s.router = gin.New()
+	s.router.GET("/", handler)
+	w := tests.Get(s.router, "/")
+
+	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
+	assert.Regexp(s.T(), "text/plain", w.HeaderMap["Content-Type"][0])
+	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
+}
+
+func (s *ErrorsTestSuite) TestNew() {
+	msg := "an error occurred"
+	assert.Equal(s.T(), New(msg), errors.New(msg))
+}
+
+func (s *ErrorsTestSuite) TestUnauthorizedWithMessage() {
+	msg := "unauthorized"
+	handler := func(c *gin.Context) {
+		UnauthorizedWithMessage(c, msg)
+	}
+
+	s.router = gin.New()
+	s.router.GET("/", handler)
+	w := tests.Get(s.router, "/")
+
+	assert.Equal(s.T(), http.StatusUnauthorized, w.Code)
+	assert.Regexp(s.T(), "application/json", w.HeaderMap["Content-Type"][0])
+	assert.Regexp(s.T(), "error.*"+msg, w.Body.String())
 }
 
 func (s *ErrorsTestSuite) TestValidationMessage() {
