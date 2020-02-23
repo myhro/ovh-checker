@@ -27,9 +27,10 @@ func main() {
 	if err != nil {
 		log.Fatal("auth: ", err)
 	}
+	r.GET("/auth/tokens", authHandler.AuthRequired, authHandler.Tokens)
+	r.GET("/auth/user", authHandler.AuthRequired, authHandler.User)
 	r.POST("/auth/login", authHandler.Login)
 	r.POST("/auth/signup", authHandler.Signup)
-	r.GET("/auth/user", authHandler.AuthRequired, authHandler.User)
 
 	hardwareHandler, err := hardware.NewHandler(db)
 	if err != nil {

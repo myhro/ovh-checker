@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type UserTestSuite struct {
+type TokensTestSuite struct {
 	suite.Suite
 
 	handler Handler
@@ -23,11 +23,11 @@ type UserTestSuite struct {
 	router  *gin.Engine
 }
 
-func TestUserTestSuite(t *testing.T) {
-	suite.Run(t, new(UserTestSuite))
+func TestTokensTestSuite(t *testing.T) {
+	suite.Run(t, new(TokensTestSuite))
 }
 
-func (s *UserTestSuite) SetupTest() {
+func (s *TokensTestSuite) SetupTest() {
 	log.SetOutput(ioutil.Discard)
 
 	s.handler = Handler{}
@@ -44,14 +44,14 @@ func (s *UserTestSuite) SetupTest() {
 
 	gin.SetMode(gin.ReleaseMode)
 	s.router = gin.New()
-	s.router.GET("/", s.handler.AuthRequired, s.handler.User)
+	s.router.GET("/", s.handler.AuthRequired, s.handler.Tokens)
 }
 
-func (s *UserTestSuite) TearDownTest() {
+func (s *TokensTestSuite) TearDownTest() {
 	s.mini.Close()
 }
 
-func (s *UserTestSuite) TestProperRequest() {
+func (s *TokensTestSuite) TestProperRequest() {
 	db := &tests.MockedDatabase{}
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	s.handler.DB = db
@@ -62,11 +62,10 @@ func (s *UserTestSuite) TestProperRequest() {
 		"Authorization": tests.AuthHeader(email, token),
 	}
 
-	s.handler.addToken(0, token, "user-test", "127.0.0.1")
+	s.handler.addToken(0, token, "tokens-test", "127.0.0.1")
 
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
 	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Regexp(s.T(), "email.*"+email, w.Body.String())
-	assert.Regexp(s.T(), "tokens.*1", w.Body.String())
+	assert.Regexp(s.T(), `"id":"xyz"`, w.Body.String())
 }

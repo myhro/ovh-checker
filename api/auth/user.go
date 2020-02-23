@@ -10,7 +10,10 @@ import (
 
 // User returns information about the current user
 func (h *Handler) User(c *gin.Context) {
-	tokens, err := h.getTokens(c)
+	id := c.GetInt("auth_id")
+
+	key := tokenSetKey(id)
+	count, err := h.Cache.SCard(key).Result()
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
@@ -19,7 +22,7 @@ func (h *Handler) User(c *gin.Context) {
 
 	body := gin.H{
 		"email":  c.GetString("email"),
-		"tokens": tokens,
+		"tokens": count,
 	}
 
 	c.JSON(http.StatusOK, body)
