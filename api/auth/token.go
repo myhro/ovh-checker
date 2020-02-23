@@ -49,8 +49,8 @@ func parseTokenAuth(c *gin.Context) (string, string, error) {
 	return email, token, nil
 }
 
-func tokensKey(id int) string {
-	return fmt.Sprintf("tokens_%v", id)
+func tokenSetKey(id int) string {
+	return fmt.Sprintf("user:%v:token-set", id)
 }
 
 func (h *Handler) checkTokenAuth(c *gin.Context) {
@@ -71,9 +71,13 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 		return
 	}
 
-	key := tokensKey(id)
-	_, err = h.Cache.HGet(key, token).Result()
+	key := tokenSetKey(id)
+	exists, err := h.Cache.SIsMember(key, token).Result()
 	if err != nil {
+		log.Print(err)
+		errors.InternalServerError(c)
+		return
+	} else if !exists {
 		errors.UnauthorizedWithMessage(c, incorrectEmailTokenError)
 		return
 	}

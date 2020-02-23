@@ -32,7 +32,7 @@ func TestAuthRequiredTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthRequiredTestSuite))
 }
 
-func (s *AuthRequiredTestSuite) SetupSuite() {
+func (s *AuthRequiredTestSuite) SetupTest() {
 	log.SetOutput(ioutil.Discard)
 
 	s.handler = Handler{}
@@ -52,8 +52,24 @@ func (s *AuthRequiredTestSuite) SetupSuite() {
 	s.router.GET("/", s.handler.AuthRequired)
 }
 
-func (s *AuthRequiredTestSuite) TearDownSuite() {
+func (s *AuthRequiredTestSuite) TearDownTest() {
 	s.mini.Close()
+}
+
+func (s *AuthRequiredTestSuite) TestCacheError() {
+	db := &tests.MockedDatabase{}
+	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	s.handler.DB = db
+
+	s.mini.Close()
+
+	headers := map[string]string{
+		"Authorization": "Token " + validToken,
+	}
+	w := tests.GetWithHeaders(s.router, "/", headers)
+
+	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
+	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestDatabaseError() {
@@ -85,17 +101,15 @@ func (s *AuthRequiredTestSuite) TestExistingUserTokenNotInRedis() {
 }
 
 func (s *AuthRequiredTestSuite) TestExistingUserTokenOk() {
-	key := tokensKey(0)
-	token := "valid-one"
-	s.handler.Cache.HSet(key, token, "")
+	key := tokenSetKey(0)
+	s.handler.Cache.SAdd(key, "xyz")
 
 	db := &tests.MockedDatabase{}
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	s.handler.DB = db
 
-	data := base64.StdEncoding.EncodeToString([]byte("user@example.com:" + token))
 	headers := map[string]string{
-		"Authorization": "Token " + data,
+		"Authorization": "Token " + validToken,
 	}
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
