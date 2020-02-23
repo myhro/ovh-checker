@@ -75,6 +75,25 @@ func (s *AuthRequiredTestSuite) TestCacheError() {
 	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
+func (s *AuthRequiredTestSuite) TestCacheErrorTokenLastUsed() {
+	cache := &tests.MockedCache{}
+	cache.On("SIsMember", mock.Anything, mock.Anything).Return(true, nil)
+	cache.On("HSet", mock.Anything, mock.Anything, mock.Anything).Return(false, errors.New("cache error"))
+	s.handler.Cache = cache
+
+	db := &tests.MockedDatabase{}
+	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	s.handler.DB = db
+
+	headers := map[string]string{
+		"Authorization": validTokenHeader,
+	}
+	w := tests.GetWithHeaders(s.router, "/", headers)
+
+	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
+	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
+}
+
 func (s *AuthRequiredTestSuite) TestDatabaseError() {
 	db := &tests.MockedDatabase{}
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("database error"))
@@ -104,8 +123,8 @@ func (s *AuthRequiredTestSuite) TestExistingUserTokenNotInRedis() {
 }
 
 func (s *AuthRequiredTestSuite) TestExistingUserTokenOk() {
-	key := tokenSetKey(0)
-	s.handler.Cache.SAdd(key, "xyz")
+	token := "xyz"
+	s.handler.addToken(0, token, "auth-required-test", "127.0.0.1")
 
 	db := &tests.MockedDatabase{}
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
