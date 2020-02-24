@@ -9,10 +9,15 @@ import (
 	"github.com/myhro/ovh-checker/storage"
 )
 
-func main() {
-	r := gin.Default()
-	port := ":8080"
+type API struct {
+	router *gin.Engine
+	port   string
 
+	cache storage.Cache
+	db    storage.DB
+}
+
+func main() {
 	cache, err := storage.NewCache()
 	if err != nil {
 		log.Fatal("cache: ", err)
@@ -23,24 +28,34 @@ func main() {
 		log.Fatal("database: ", err)
 	}
 
-	authHandler, err := auth.NewHandler(cache, db)
+	api := API{
+		router: gin.Default(),
+		port:   ":8080",
+		cache:  cache,
+		db:     db,
+	}
+	api.loadRoutes()
+
+	if gin.Mode() == gin.ReleaseMode {
+		log.Print("Starting server on port ", api.port)
+	}
+	api.router.Run(api.port)
+}
+
+func (a *API) loadRoutes() {
+	authHandler, err := auth.NewHandler(a.cache, a.db)
 	if err != nil {
 		log.Fatal("auth: ", err)
 	}
-	r.GET("/auth/tokens", authHandler.AuthRequired, authHandler.Tokens)
-	r.GET("/auth/user", authHandler.AuthRequired, authHandler.User)
-	r.POST("/auth/login", authHandler.Login)
-	r.POST("/auth/logout", authHandler.AuthRequired, authHandler.Logout)
-	r.POST("/auth/signup", authHandler.Signup)
+	a.router.GET("/auth/tokens", authHandler.AuthRequired, authHandler.Tokens)
+	a.router.GET("/auth/user", authHandler.AuthRequired, authHandler.User)
+	a.router.POST("/auth/login", authHandler.Login)
+	a.router.POST("/auth/logout", authHandler.AuthRequired, authHandler.Logout)
+	a.router.POST("/auth/signup", authHandler.Signup)
 
-	hardwareHandler, err := hardware.NewHandler(db)
+	hardwareHandler, err := hardware.NewHandler(a.db)
 	if err != nil {
 		log.Fatal("hardware: ", err)
 	}
-	r.GET("/hardware/offers", hardwareHandler.Offers)
-
-	if gin.Mode() == gin.ReleaseMode {
-		log.Print("Starting server on port ", port)
-	}
-	r.Run(port)
+	a.router.GET("/hardware/offers", hardwareHandler.Offers)
 }
