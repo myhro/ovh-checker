@@ -24,11 +24,6 @@ func (r *Redis) Ping() (string, error) {
 	return r.Client.Ping().Result()
 }
 
-// SAdd wraps the same redis.Client method
-func (r *Redis) SAdd(key string, members ...interface{}) (int64, error) {
-	return r.Client.SAdd(key, members...).Result()
-}
-
 // SCard wraps the same redis.Client method
 func (r *Redis) SCard(key string) (int64, error) {
 	return r.Client.SCard(key).Result()

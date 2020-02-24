@@ -22,18 +22,6 @@ func (m *MockedCache) HSet(key, field string, value interface{}) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
-// Ping mocks the same redis.Client method
-func (m *MockedCache) Ping() (string, error) {
-	args := m.Called()
-	return args.String(0), args.Error(1)
-}
-
-// SAdd mocks the same redis.Client method
-func (m *MockedCache) SAdd(key string, members ...interface{}) (int64, error) {
-	args := m.Called(key, members)
-	return int64(args.Int(0)), args.Error(1)
-}
-
 // SCard mocks the same redis.Client method
 func (m *MockedCache) SCard(key string) (int64, error) {
 	args := m.Called(key)

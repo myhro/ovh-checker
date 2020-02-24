@@ -10,8 +10,6 @@ import (
 type Cache interface {
 	HGetAll(key string) (map[string]string, error)
 	HSet(key, field string, value interface{}) (bool, error)
-	Ping() (string, error)
-	SAdd(key string, members ...interface{}) (int64, error)
 	SCard(key string) (int64, error)
 	SIsMember(key string, member interface{}) (bool, error)
 	SMembers(key string) ([]string, error)
