@@ -30,6 +30,7 @@ func main() {
 	r.GET("/auth/tokens", authHandler.AuthRequired, authHandler.Tokens)
 	r.GET("/auth/user", authHandler.AuthRequired, authHandler.User)
 	r.POST("/auth/login", authHandler.Login)
+	r.POST("/auth/logout", authHandler.AuthRequired, authHandler.Logout)
 	r.POST("/auth/signup", authHandler.Signup)
 
 	hardwareHandler, err := hardware.NewHandler(db)

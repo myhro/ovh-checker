@@ -99,6 +99,7 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 
 	c.Set("auth_id", id)
 	c.Set("email", email)
+	c.Set("token", token)
 }
 
 func (h *Handler) newToken(c *gin.Context, id int) (string, error) {

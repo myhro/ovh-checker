@@ -10,7 +10,9 @@ import (
 
 // Tokens returns the list of tokens for the current user
 func (h *Handler) Tokens(c *gin.Context) {
-	tokens, err := h.getTokens(c)
+	id := c.GetInt("auth_id")
+
+	tokens, err := h.getTokens(id)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)

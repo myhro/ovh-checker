@@ -3,7 +3,6 @@ package auth
 import (
 	"sort"
 
-	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/storage"
 )
 
@@ -29,8 +28,22 @@ func (h *Handler) addToken(id int, token, client, ip string) error {
 	return nil
 }
 
-func (h *Handler) getTokens(c *gin.Context) ([]map[string]string, error) {
-	id := c.GetInt("auth_id")
+func (h *Handler) deleteToken(id int, token string) error {
+	tx := h.Cache.TxPipeline()
+	key := tokenSetKey(id)
+	tx.SRem(key, token)
+	key = tokenKey(id, token)
+	tx.Del(key)
+
+	_, err := tx.Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Handler) getTokens(id int) ([]map[string]string, error) {
 	key := tokenSetKey(id)
 
 	members, err := h.Cache.SMembers(key)
