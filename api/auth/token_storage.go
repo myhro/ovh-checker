@@ -27,7 +27,7 @@ func (h *Handler) addToken(keyPrefix string, id int, token, client, ip string) e
 		"id":         token,
 		"client":     client,
 		"ip":         ip,
-		"created_at": storage.Now(),
+		"created_at": storage.NowString(),
 	}
 
 	tx := h.Cache.TxPipeline()
@@ -98,7 +98,7 @@ func (h *Handler) getTokens(id int) (map[string][]tokenDetails, error) {
 
 func (h *Handler) updateTokenLastUsed(keyPrefix string, id int, token string) error {
 	key := tokenKey(keyPrefix, id, token)
-	_, err := h.Cache.HSet(key, "last_used", storage.Now())
+	_, err := h.Cache.HSet(key, "last_used", storage.NowString())
 	if err != nil {
 		return err
 	}
