@@ -78,10 +78,11 @@ func (s *LogoutTestSuite) TestMultipleTokens() {
 	id := 0
 	token1 := "xyz"
 	token2 := "abc"
-	s.handler.addToken(id, token1, "logout-test", "127.0.0.1")
-	s.handler.addToken(id, token2, "logout-test", "127.0.0.1")
+	s.handler.addToken(authStoragePrefix, id, token1, "logout-test", "127.0.0.1")
+	s.handler.addToken(authStoragePrefix, id, token2, "logout-test", "127.0.0.1")
 
-	list, err := s.handler.getTokens(id)
+	res, err := s.handler.getTokens(id)
+	list := res[authStoragePrefix]
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), list, 2)
 
@@ -94,7 +95,8 @@ func (s *LogoutTestSuite) TestMultipleTokens() {
 	assert.Equal(s.T(), http.StatusOK, w.Code)
 	assert.Regexp(s.T(), logoutMessage, w.Body.String())
 
-	list, err = s.handler.getTokens(id)
+	res, err = s.handler.getTokens(id)
+	list = res[authStoragePrefix]
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), list, 1)
 }
@@ -102,9 +104,10 @@ func (s *LogoutTestSuite) TestMultipleTokens() {
 func (s *LogoutTestSuite) TestSingleToken() {
 	id := 0
 	token := "xyz"
-	s.handler.addToken(id, token, "logout-test", "127.0.0.1")
+	s.handler.addToken(authStoragePrefix, id, token, "logout-test", "127.0.0.1")
 
-	list, err := s.handler.getTokens(id)
+	res, err := s.handler.getTokens(id)
+	list := res[authStoragePrefix]
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), list, 1)
 
@@ -117,7 +120,8 @@ func (s *LogoutTestSuite) TestSingleToken() {
 	assert.Equal(s.T(), http.StatusOK, w.Code)
 	assert.Regexp(s.T(), logoutMessage, w.Body.String())
 
-	list, err = s.handler.getTokens(id)
+	res, err = s.handler.getTokens(id)
+	list = res[authStoragePrefix]
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), list, 0)
 }

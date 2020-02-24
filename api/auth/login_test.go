@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
@@ -49,8 +51,11 @@ func (s *LoginTestSuite) SetupTest() {
 		Client: redis.NewClient(opts),
 	}
 
+	store := cookie.NewStore([]byte("login-test"))
+
 	gin.SetMode(gin.ReleaseMode)
 	s.router = gin.New()
+	s.router.Use(sessions.Sessions("session", store))
 	s.router.POST("/", s.handler.Login)
 }
 
@@ -115,5 +120,5 @@ func (s *LoginTestSuite) TestValidUser() {
 	w := tests.Post(s.router, "/", validCreds)
 
 	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Regexp(s.T(), "token", w.Body.String())
+	assert.Regexp(s.T(), successfulLogin, w.Body.String())
 }

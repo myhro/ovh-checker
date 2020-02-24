@@ -81,8 +81,8 @@ func (s *TokensTestSuite) TestCacheErrorFetchingTokenSet() {
 func (s *TokensTestSuite) TestMultipleTokens() {
 	token1 := "xyz"
 	token2 := "abc"
-	s.handler.addToken(0, token1, "tokens-test", "127.0.0.1")
-	s.handler.addToken(0, token2, "tokens-test", "127.0.0.1")
+	s.handler.addToken(authStoragePrefix, 0, token1, "tokens-test", "127.0.0.1")
+	s.handler.addToken(authStoragePrefix, 0, token2, "tokens-test", "127.0.0.1")
 
 	w := tests.Get(s.router, "/")
 
@@ -93,7 +93,7 @@ func (s *TokensTestSuite) TestMultipleTokens() {
 
 func (s *TokensTestSuite) TestSingleToken() {
 	token := "xyz"
-	s.handler.addToken(0, token, "tokens-test", "127.0.0.1")
+	s.handler.addToken(authStoragePrefix, 0, token, "tokens-test", "127.0.0.1")
 
 	w := tests.Get(s.router, "/")
 

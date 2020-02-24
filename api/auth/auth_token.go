@@ -3,13 +3,11 @@ package auth
 import (
 	"database/sql"
 	"encoding/base64"
-	"fmt"
 	"log"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
-	"github.com/myhro/ovh-checker/storage"
 	"github.com/satori/go.uuid"
 )
 
@@ -51,15 +49,6 @@ func parseTokenAuth(c *gin.Context) (string, string, error) {
 	return email, token, nil
 }
 
-func tokenKey(id int, token string) string {
-	return fmt.Sprintf("user:%v:token:%v", id, token)
-
-}
-
-func tokenSetKey(id int) string {
-	return fmt.Sprintf("user:%v:token-set", id)
-}
-
 func (h *Handler) checkTokenAuth(c *gin.Context) {
 	email, token, err := parseTokenAuth(c)
 	if err != nil {
@@ -78,7 +67,7 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 		return
 	}
 
-	key := tokenSetKey(id)
+	key := tokenSetKey(authStoragePrefix, id)
 	exists, err := h.Cache.SIsMember(key, token)
 	if err != nil {
 		log.Print(err)
@@ -89,8 +78,7 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 		return
 	}
 
-	key = tokenKey(id, token)
-	_, err = h.Cache.HSet(key, "last_used", storage.Now())
+	err = h.updateTokenLastUsed(authStoragePrefix, id, token)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
@@ -107,7 +95,7 @@ func (h *Handler) newToken(c *gin.Context, id int) (string, error) {
 	ip := c.ClientIP()
 	token := uuid.NewV4().String()
 
-	err := h.addToken(id, token, client, ip)
+	err := h.addToken(authStoragePrefix, id, token, client, ip)
 	if err != nil {
 		return "", err
 	}

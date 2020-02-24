@@ -1,12 +1,28 @@
 package auth
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/myhro/ovh-checker/storage"
 )
 
-func (h *Handler) addToken(id int, token, client, ip string) error {
+const (
+	authStoragePrefix    = "auth"
+	sessionStoragePrefix = "session"
+)
+
+type tokenDetails map[string]string
+
+func tokenSetKey(keyPrefix string, id int) string {
+	return fmt.Sprintf("user:%v:%v-set", id, keyPrefix)
+}
+
+func tokenKey(keyPrefix string, id int, token string) string {
+	return fmt.Sprintf("user:%v:%v:%v", id, keyPrefix, token)
+}
+
+func (h *Handler) addToken(keyPrefix string, id int, token, client, ip string) error {
 	details := map[string]interface{}{
 		"id":         token,
 		"client":     client,
@@ -15,9 +31,9 @@ func (h *Handler) addToken(id int, token, client, ip string) error {
 	}
 
 	tx := h.Cache.TxPipeline()
-	key := tokenSetKey(id)
+	key := tokenSetKey(keyPrefix, id)
 	tx.SAdd(key, token)
-	key = tokenKey(id, token)
+	key = tokenKey(keyPrefix, id, token)
 	tx.HMSet(key, details)
 
 	_, err := tx.Exec()
@@ -28,11 +44,20 @@ func (h *Handler) addToken(id int, token, client, ip string) error {
 	return nil
 }
 
-func (h *Handler) deleteToken(id int, token string) error {
+func (h *Handler) countTokens(keyPrefix string, id int) (int64, error) {
+	key := tokenSetKey(keyPrefix, id)
+	count, err := h.Cache.SCard(key)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (h *Handler) deleteToken(keyPrefix string, id int, token string) error {
 	tx := h.Cache.TxPipeline()
-	key := tokenSetKey(id)
+	key := tokenSetKey(keyPrefix, id)
 	tx.SRem(key, token)
-	key = tokenKey(id, token)
+	key = tokenKey(keyPrefix, id, token)
 	tx.Del(key)
 
 	_, err := tx.Exec()
@@ -43,27 +68,48 @@ func (h *Handler) deleteToken(id int, token string) error {
 	return nil
 }
 
-func (h *Handler) getTokens(id int) ([]map[string]string, error) {
-	key := tokenSetKey(id)
-
-	members, err := h.Cache.SMembers(key)
-	if err != nil {
-		return nil, err
-	}
-
-	var list []map[string]string
-	for _, token := range members {
-		key := tokenKey(id, token)
-		details, err := h.Cache.HGetAll(key)
+func (h *Handler) getTokens(id int) (map[string][]tokenDetails, error) {
+	result := map[string][]tokenDetails{}
+	prefixes := []string{authStoragePrefix, sessionStoragePrefix}
+	for _, p := range prefixes {
+		key := tokenSetKey(p, id)
+		members, err := h.Cache.SMembers(key)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, details)
+
+		list := make([]tokenDetails, 0)
+		for _, token := range members {
+			key := tokenKey(p, id, token)
+			details, err := h.Cache.HGetAll(key)
+			if err != nil {
+				return nil, err
+			}
+			list = append(list, details)
+		}
+		sort.Slice(list, func(i, j int) bool {
+			return list[i]["created_at"] > list[j]["created_at"]
+		})
+		result[p] = list
 	}
 
-	sort.Slice(list, func(i, j int) bool {
-		return list[i]["created_at"] > list[j]["created_at"]
-	})
+	return result, nil
+}
 
-	return list, nil
+func (h *Handler) updateTokenLastUsed(keyPrefix string, id int, token string) error {
+	key := tokenKey(keyPrefix, id, token)
+	_, err := h.Cache.HSet(key, "last_used", storage.Now())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) validToken(keyPrefix string, id int, token string) (bool, error) {
+	key := tokenSetKey(keyPrefix, id)
+	valid, err := h.Cache.SIsMember(key, token)
+	if err != nil {
+		return false, err
+	}
+	return valid, nil
 }

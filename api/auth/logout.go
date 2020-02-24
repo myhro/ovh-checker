@@ -15,7 +15,13 @@ func (h *Handler) Logout(c *gin.Context) {
 	id := c.GetInt("auth_id")
 	token := c.GetString("token")
 
-	err := h.deleteToken(id, token)
+	err := h.deleteToken(authStoragePrefix, id, token)
+	if err != nil {
+		log.Print(err)
+		errors.InternalServerError(c)
+		return
+	}
+	err = h.deleteToken(sessionStoragePrefix, id, token)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)

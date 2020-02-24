@@ -3,18 +3,21 @@ package main
 import (
 	"log"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/auth"
 	"github.com/myhro/ovh-checker/api/hardware"
 	"github.com/myhro/ovh-checker/storage"
 )
 
+// API is the main server structure
 type API struct {
 	router *gin.Engine
 	port   string
 
 	cache storage.Cache
 	db    storage.DB
+	store storage.CookieStore
 }
 
 func main() {
@@ -28,12 +31,19 @@ func main() {
 		log.Fatal("database: ", err)
 	}
 
+	store, err := storage.NewCookieStore()
+	if err != nil {
+		log.Print("store: ", err)
+	}
+
 	api := API{
 		router: gin.Default(),
 		port:   ":8080",
 		cache:  cache,
 		db:     db,
+		store:  store,
 	}
+	api.router.Use(sessions.Sessions("session", api.store))
 	api.loadRoutes()
 
 	if gin.Mode() == gin.ReleaseMode {

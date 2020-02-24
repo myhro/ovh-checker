@@ -5,18 +5,22 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
 )
 
-const incorrectEmailPasswordError = "incorrect email or password"
+const (
+	incorrectEmailPasswordError = "incorrect email or password"
+	successfulLogin             = "successfully logged in"
+)
 
 type loginRequest struct {
 	Email    string `form:"email" binding:"required"`
 	Password string `form:"password" binding:"required"`
 }
 
-// Login generates a new token and allows a user to log in
+// Login generates a new session
 func (h *Handler) Login(c *gin.Context) {
 	req := loginRequest{}
 	err := c.ShouldBind(&req)
@@ -37,16 +41,21 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.newToken(c, id)
+	client := c.GetHeader("User-Agent")
+	ip := c.ClientIP()
+	token, err := h.newSessionToken(id, client, ip)
 	if err != nil {
-		log.Print(err)
 		errors.InternalServerError(c)
 		return
-
 	}
 
+	session := sessions.Default(c)
+	session.Set("auth_id", id)
+	session.Set("session_id", token)
+	session.Save()
+
 	body := gin.H{
-		"token": token,
+		"message": successfulLogin,
 	}
 
 	c.JSON(http.StatusOK, body)

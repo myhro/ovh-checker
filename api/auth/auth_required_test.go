@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
@@ -50,8 +52,11 @@ func (s *AuthRequiredTestSuite) SetupTest() {
 		Client: redis.NewClient(opts),
 	}
 
+	store := cookie.NewStore([]byte("login-test"))
+
 	gin.SetMode(gin.ReleaseMode)
 	s.router = gin.New()
+	s.router.Use(sessions.Sessions("session", store))
 	s.router.GET("/", s.handler.AuthRequired)
 }
 
@@ -124,7 +129,7 @@ func (s *AuthRequiredTestSuite) TestExistingUserTokenNotInRedis() {
 
 func (s *AuthRequiredTestSuite) TestExistingUserTokenOk() {
 	token := "xyz"
-	s.handler.addToken(0, token, "auth-required-test", "127.0.0.1")
+	s.handler.addToken(authStoragePrefix, 0, token, "auth-required-test", "127.0.0.1")
 
 	db := &tests.MockedDatabase{}
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
