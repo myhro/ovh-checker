@@ -69,6 +69,29 @@ func (s *AuthTestSuite) TestUserDoesntExists() {
 	assert.Equal(s.T(), sql.ErrNoRows, err)
 }
 
+func (s *AuthTestSuite) TestUserEmail() {
+	email := fake.EmailAddress()
+
+	_, err := s.db.Exec(s.queries["add-user"], email, fake.SimplePassword())
+	assert.NoError(s.T(), err)
+
+	var id int
+	err = s.db.Get(&id, s.queries["user-exists"], email)
+	assert.NoError(s.T(), err)
+
+	var dbEmail string
+	err = s.db.Get(&dbEmail, s.queries["user-email"], id)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), email, dbEmail)
+}
+
+func (s *AuthTestSuite) TestUserEmailNotFound() {
+	var dbEmail string
+	err := s.db.Get(&dbEmail, s.queries["user-email"], 0)
+	assert.Error(s.T(), err)
+	assert.Equal(s.T(), sql.ErrNoRows, err)
+}
+
 func (s *AuthTestSuite) TestUserExists() {
 	email := fake.EmailAddress()
 

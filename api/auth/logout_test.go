@@ -4,13 +4,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/alicebob/miniredis"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
+	"github.com/myhro/ovh-checker/api/token"
 	"github.com/myhro/ovh-checker/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -47,26 +47,23 @@ func (s *LogoutTestSuite) SetupTest() {
 
 	gin.SetMode(gin.ReleaseMode)
 	s.router = gin.New()
-	s.router.POST("/", s.handler.Logout)
 }
 
 func (s *LogoutTestSuite) TearDownTest() {
 	s.mini.Close()
 }
 
-func (s *LogoutTestSuite) SetGinContext(ctxs map[string]interface{}) {
-	rec := httptest.NewRecorder()
-	_, s.router = gin.CreateTestContext(rec)
-	s.router.Use(func(c *gin.Context) {
-		for k, v := range ctxs {
-			c.Set(k, v)
-		}
+func (s *LogoutTestSuite) TestCacheError() {
+	tk := token.NewAuthToken(1, s.handler.Cache)
+	err := tk.Save()
+	assert.NoError(s.T(), err)
+
+	s.mini.Close()
+
+	tests.SetGinContext(s.router, map[string]interface{}{
+		"token": tk,
 	})
 	s.router.POST("/", s.handler.Logout)
-}
-
-func (s *LogoutTestSuite) TestCacheError() {
-	s.mini.Close()
 
 	w := tests.Post(s.router, "/", "")
 
@@ -74,54 +71,27 @@ func (s *LogoutTestSuite) TestCacheError() {
 	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
-func (s *LogoutTestSuite) TestMultipleTokens() {
-	id := 0
-	token1 := "xyz"
-	token2 := "abc"
-	s.handler.addToken(authStoragePrefix, id, token1, "logout-test", "127.0.0.1")
-	s.handler.addToken(authStoragePrefix, id, token2, "logout-test", "127.0.0.1")
-
-	res, err := s.handler.getTokens(id)
-	list := res[authStoragePrefix]
-	assert.NoError(s.T(), err)
-	assert.Len(s.T(), list, 2)
-
-	s.SetGinContext(map[string]interface{}{
-		"auth_id": id,
-		"token":   token1,
-	})
-	w := tests.Post(s.router, "/", "")
-
-	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Regexp(s.T(), logoutMessage, w.Body.String())
-
-	res, err = s.handler.getTokens(id)
-	list = res[authStoragePrefix]
-	assert.NoError(s.T(), err)
-	assert.Len(s.T(), list, 1)
-}
-
 func (s *LogoutTestSuite) TestSingleToken() {
-	id := 0
-	token := "xyz"
-	s.handler.addToken(authStoragePrefix, id, token, "logout-test", "127.0.0.1")
-
-	res, err := s.handler.getTokens(id)
-	list := res[authStoragePrefix]
+	id := 1
+	tk := token.NewAuthToken(id, s.handler.Cache)
+	err := tk.Save()
 	assert.NoError(s.T(), err)
-	assert.Len(s.T(), list, 1)
 
-	s.SetGinContext(map[string]interface{}{
-		"auth_id": id,
-		"token":   token,
+	tests.SetGinContext(s.router, map[string]interface{}{
+		"token": tk,
 	})
+	s.router.POST("/", s.handler.Logout)
+
+	res, err := tk.Storage.ListAll(id)
+	assert.NoError(s.T(), err)
+	assert.Len(s.T(), res["auth"], 1)
+
 	w := tests.Post(s.router, "/", "")
 
 	assert.Equal(s.T(), http.StatusOK, w.Code)
 	assert.Regexp(s.T(), logoutMessage, w.Body.String())
 
-	res, err = s.handler.getTokens(id)
-	list = res[authStoragePrefix]
+	res, err = tk.Storage.ListAll(id)
 	assert.NoError(s.T(), err)
-	assert.Len(s.T(), list, 0)
+	assert.Len(s.T(), res["auth"], 0)
 }

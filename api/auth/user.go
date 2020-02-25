@@ -10,9 +10,17 @@ import (
 
 // User returns information about the current user
 func (h *Handler) User(c *gin.Context) {
-	id := c.GetInt("auth_id")
+	tk := getToken(c)
+	count, err := tk.Count()
+	if err != nil {
+		log.Print(err)
+		errors.InternalServerError(c)
+		return
+	}
 
-	count, err := h.countTokens(authStoragePrefix, id)
+	id := c.GetInt("auth_id")
+	var email string
+	err = h.DB.Get(&email, h.Queries["user-email"], id)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
@@ -20,7 +28,7 @@ func (h *Handler) User(c *gin.Context) {
 	}
 
 	body := gin.H{
-		"email":  c.GetString("email"),
+		"email":  email,
 		"tokens": count,
 	}
 

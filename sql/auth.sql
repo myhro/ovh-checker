@@ -10,6 +10,12 @@ SELECT id
     AND password = crypt($2, password)
 ;
 
+-- name: user-email
+SELECT email
+  FROM auth
+  WHERE id = $1
+;
+
 -- name: user-exists
 SELECT id
   FROM auth

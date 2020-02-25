@@ -9,10 +9,13 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-type TokenType int
+// Type is the token type
+type Type int
 
 const (
-	Auth TokenType = iota
+	// Auth persistent token
+	Auth Type = iota
+	// Session expiring token
 	Session
 )
 
@@ -21,28 +24,68 @@ var prefixes = []string{
 	"session",
 }
 
+// Token holds all the token information
 type Token struct {
-	Storage *TokenStorage
-	Key     string
-	SetKey  string
-	Type    TokenType
-	UserID  int
+	Storage *Storage `json:"-"`
+	Key     string   `json:"-"`
+	SetKey  string   `json:"-"`
+	Type    Type     `json:"-"`
+	UserID  int      `json:"-"`
 
-	ID         string    `cache:"id"`
-	Client     string    `cache:"client"`
-	IP         string    `cache:"ip"`
-	CreatedAt  time.Time `cache:"created_at"`
-	LastUsedAt time.Time `cache:"last_used_at"`
+	ID         string    `json:"id"`
+	Client     string    `json:"client"`
+	IP         string    `json:"ip"`
+	CreatedAt  time.Time `json:"created_at"`
+	LastUsedAt time.Time `json:"last_used_at"`
 }
 
-func NewAuthToken(userID int) *Token {
-	id := uuid.NewV4().String()
+// LoadAuthToken loads an existing Auth token from storage
+func LoadAuthToken(userID int, tokenID string, cache storage.Cache) (*Token, error) {
+	return loadToken(Auth, userID, tokenID, cache)
+}
+
+// LoadSessionToken loads an existing Session token from storage
+func LoadSessionToken(userID int, sessionID string, cache storage.Cache) (*Token, error) {
+	return loadToken(Session, userID, sessionID, cache)
+}
+
+func loadToken(tt Type, userID int, tokenID string, cache storage.Cache) (*Token, error) {
+	ts := &Storage{
+		Cache: cache,
+	}
+
+	token, err := ts.Load(tt, userID, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	token.Storage = ts
+
+	return token, nil
+}
+
+// NewAuthToken creates a new Auth token
+func NewAuthToken(userID int, cache storage.Cache) *Token {
+	tokenID := uuid.NewV4().String()
+	return newToken(Auth, userID, tokenID, cache)
+}
+
+// NewSessionToken creates a new Session token
+func NewSessionToken(userID int, cache storage.Cache) *Token {
+	tokenID := fmt.Sprintf("%x", uuid.NewV4().Bytes())
+	return newToken(Session, userID, tokenID, cache)
+}
+
+func newToken(tt Type, userID int, tokenID string, cache storage.Cache) *Token {
+	ts := &Storage{
+		Cache: cache,
+	}
 
 	token := &Token{
-		Type:   Auth,
-		UserID: userID,
+		Storage: ts,
+		Type:    tt,
+		UserID:  userID,
 
-		ID:        id,
+		ID:        tokenID,
 		CreatedAt: storage.Now(),
 	}
 	token.keys()
@@ -50,21 +93,7 @@ func NewAuthToken(userID int) *Token {
 	return token
 }
 
-func NewSessionToken(userID int) *Token {
-	id := fmt.Sprintf("%x", uuid.NewV4().Bytes())
-
-	token := &Token{
-		Type:   Session,
-		UserID: userID,
-
-		ID:        id,
-		CreatedAt: storage.Now(),
-	}
-	token.keys()
-
-	return token
-}
-
+// Count returns how many tokens are part of its set
 func (t *Token) Count() (int64, error) {
 	count, err := t.Storage.Cache.SCard(t.SetKey)
 	if err != nil {
@@ -73,6 +102,7 @@ func (t *Token) Count() (int64, error) {
 	return count, nil
 }
 
+// Delete removes a token from storage
 func (t *Token) Delete() error {
 	tx := t.Storage.Cache.TxPipeline()
 	tx.SRem(t.SetKey, t.ID)
@@ -87,7 +117,10 @@ func (t *Token) Delete() error {
 func (t *Token) field(f string) string {
 	field, ok := reflect.TypeOf(t).Elem().FieldByName(f)
 	if ok {
-		return field.Tag.Get("cache")
+		v := field.Tag.Get("json")
+		if v != "-" {
+			return v
+		}
 	}
 	return ""
 }
@@ -98,6 +131,7 @@ func (t *Token) keys() {
 	t.SetKey = fmt.Sprintf("user:%v:%v-set", t.UserID, prefix)
 }
 
+// Save adds a token to storage
 func (t *Token) Save() error {
 	details := map[string]interface{}{
 		t.field("ID"):         t.ID,
@@ -118,6 +152,7 @@ func (t *Token) Save() error {
 	return nil
 }
 
+// Set returns the tokens which are part of its set
 func (t *Token) Set() ([]string, error) {
 	members, err := t.Storage.Cache.SMembers(t.SetKey)
 	if err != nil {
@@ -126,6 +161,7 @@ func (t *Token) Set() ([]string, error) {
 	return members, nil
 }
 
+// UpdateLastUsed updates the LastUsedAt token information
 func (t *Token) UpdateLastUsed() error {
 	now := storage.Now()
 	_, err := t.Storage.Cache.HSet(t.Key, t.field("LastUsedAt"), storage.TimeFormat(now))
@@ -136,6 +172,7 @@ func (t *Token) UpdateLastUsed() error {
 	return nil
 }
 
+// Valid returns whether a token is valid or not
 func (t *Token) Valid() (bool, error) {
 	valid, err := t.Storage.Cache.SIsMember(t.SetKey, t.ID)
 	if err != nil {

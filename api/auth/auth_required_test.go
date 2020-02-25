@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
+	"github.com/myhro/ovh-checker/api/token"
 	"github.com/myhro/ovh-checker/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -80,25 +81,6 @@ func (s *AuthRequiredTestSuite) TestCacheError() {
 	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
-func (s *AuthRequiredTestSuite) TestCacheErrorTokenLastUsed() {
-	cache := &tests.MockedCache{}
-	cache.On("SIsMember", mock.Anything, mock.Anything).Return(true, nil)
-	cache.On("HSet", mock.Anything, mock.Anything, mock.Anything).Return(false, errors.New("cache error"))
-	s.handler.Cache = cache
-
-	db := &tests.MockedDatabase{}
-	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	s.handler.DB = db
-
-	headers := map[string]string{
-		"Authorization": validTokenHeader,
-	}
-	w := tests.GetWithHeaders(s.router, "/", headers)
-
-	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
-	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
-}
-
 func (s *AuthRequiredTestSuite) TestDatabaseError() {
 	db := &tests.MockedDatabase{}
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("database error"))
@@ -127,21 +109,21 @@ func (s *AuthRequiredTestSuite) TestExistingUserTokenNotInRedis() {
 	assert.Regexp(s.T(), incorrectEmailTokenError, w.Body.String())
 }
 
-func (s *AuthRequiredTestSuite) TestExistingUserTokenOk() {
-	token := "xyz"
-	s.handler.addToken(authStoragePrefix, 0, token, "auth-required-test", "127.0.0.1")
+func (s *AuthRequiredTestSuite) TestInvalidSession() {
+	s.router.GET("/set", func(c *gin.Context) {
+		session := sessions.Default(c)
+		session.Set("auth_id", 1)
+		session.Set("session_id", "xyz")
+		session.Save()
+	})
 
-	db := &tests.MockedDatabase{}
-	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	s.handler.DB = db
+	w1 := tests.Get(s.router, "/set")
+	cookies := w1.HeaderMap.Get("Set-Cookie")
 
-	headers := map[string]string{
-		"Authorization": validTokenHeader,
-	}
-	w := tests.GetWithHeaders(s.router, "/", headers)
+	w2 := tests.GetWithHeaders(s.router, "/", map[string]string{"Cookie": cookies})
 
-	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Equal(s.T(), "", w.Body.String())
+	assert.Equal(s.T(), http.StatusUnauthorized, w2.Code)
+	assert.Regexp(s.T(), invalidSessionError, w2.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestInvalidToken() {
@@ -184,6 +166,47 @@ func (s *AuthRequiredTestSuite) TestNonExistentUser() {
 
 	assert.Equal(s.T(), http.StatusUnauthorized, w.Code)
 	assert.Regexp(s.T(), incorrectEmailTokenError, w.Body.String())
+}
+
+func (s *AuthRequiredTestSuite) TestSessionCacheError() {
+	s.router.GET("/set", func(c *gin.Context) {
+		session := sessions.Default(c)
+		session.Set("auth_id", 1)
+		session.Set("session_id", "xyz")
+		session.Save()
+	})
+
+	w1 := tests.Get(s.router, "/set")
+	cookies := w1.HeaderMap.Get("Set-Cookie")
+
+	s.mini.Close()
+
+	w2 := tests.GetWithHeaders(s.router, "/", map[string]string{"Cookie": cookies})
+
+	assert.Equal(s.T(), http.StatusInternalServerError, w2.Code)
+	assert.Equal(s.T(), "Internal Server Error", w2.Body.String())
+}
+
+func (s *AuthRequiredTestSuite) TestValidSession() {
+	id := 1
+	tk := token.NewSessionToken(id, s.handler.Cache)
+	err := tk.Save()
+	assert.NoError(s.T(), err)
+
+	s.router.GET("/set", func(c *gin.Context) {
+		session := sessions.Default(c)
+		session.Set("auth_id", id)
+		session.Set("session_id", tk.ID)
+		session.Save()
+	})
+
+	w1 := tests.Get(s.router, "/set")
+	cookies := w1.HeaderMap.Get("Set-Cookie")
+
+	w2 := tests.GetWithHeaders(s.router, "/", map[string]string{"Cookie": cookies})
+
+	assert.Equal(s.T(), http.StatusOK, w2.Code)
+	assert.Equal(s.T(), "", w2.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestWrongHeader() {

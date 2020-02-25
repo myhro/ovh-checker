@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
+	"github.com/myhro/ovh-checker/api/token"
 	"github.com/myhro/ovh-checker/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -48,7 +49,6 @@ func (s *UserTestSuite) SetupTest() {
 
 	gin.SetMode(gin.ReleaseMode)
 	s.router = gin.New()
-	s.router.GET("/", s.handler.User)
 }
 
 func (s *UserTestSuite) TearDownTest() {
@@ -56,9 +56,16 @@ func (s *UserTestSuite) TearDownTest() {
 }
 
 func (s *UserTestSuite) TestCacheError() {
-	cache := &tests.MockedCache{}
-	cache.On("SCard", mock.Anything).Return(0, errors.New("cache error"))
-	s.handler.Cache = cache
+	tk := token.NewAuthToken(1, s.handler.Cache)
+	err := tk.Save()
+	assert.NoError(s.T(), err)
+
+	tests.SetGinContext(s.router, map[string]interface{}{
+		"token": tk,
+	})
+	s.router.GET("/", s.handler.User)
+
+	s.mini.Close()
 
 	w := tests.Get(s.router, "/")
 
@@ -66,26 +73,42 @@ func (s *UserTestSuite) TestCacheError() {
 	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
-func (s *UserTestSuite) TestMultipleTokens() {
-	token1 := "xyz"
-	token2 := "abc"
-	s.handler.addToken(authStoragePrefix, 0, token1, "user-test", "127.0.0.1")
-	s.handler.addToken(authStoragePrefix, 0, token2, "user-test", "127.0.0.1")
+func (s *UserTestSuite) TestDatabaseError() {
+	db := &tests.MockedDatabase{}
+	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("database error"))
+	s.handler.DB = db
+
+	tk := token.NewAuthToken(1, s.handler.Cache)
+	err := tk.Save()
+	assert.NoError(s.T(), err)
+
+	tests.SetGinContext(s.router, map[string]interface{}{
+		"token": tk,
+	})
+	s.router.GET("/", s.handler.User)
 
 	w := tests.Get(s.router, "/")
 
-	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Regexp(s.T(), "email", w.Body.String())
-	assert.Regexp(s.T(), "tokens.*2", w.Body.String())
+	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
+	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
 func (s *UserTestSuite) TestSingleToken() {
-	token := "xyz"
-	s.handler.addToken(authStoragePrefix, 0, token, "user-test", "127.0.0.1")
+	db := &tests.MockedDatabase{}
+	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	s.handler.DB = db
+
+	tk := token.NewAuthToken(1, s.handler.Cache)
+	err := tk.Save()
+	assert.NoError(s.T(), err)
+
+	tests.SetGinContext(s.router, map[string]interface{}{
+		"token": tk,
+	})
+	s.router.GET("/", s.handler.User)
 
 	w := tests.Get(s.router, "/")
 
 	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Regexp(s.T(), "email", w.Body.String())
-	assert.Regexp(s.T(), "tokens.*1", w.Body.String())
+	assert.Regexp(s.T(), `"tokens":1`, w.Body.String())
 }

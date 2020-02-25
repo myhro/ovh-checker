@@ -8,6 +8,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
+	"github.com/myhro/ovh-checker/api/token"
 )
 
 const (
@@ -41,9 +42,10 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	client := c.GetHeader("User-Agent")
-	ip := c.ClientIP()
-	token, err := h.newSessionToken(id, client, ip)
+	tk := token.NewSessionToken(id, h.Cache)
+	tk.Client = c.GetHeader("User-Agent")
+	tk.IP = c.ClientIP()
+	err = tk.Save()
 	if err != nil {
 		errors.InternalServerError(c)
 		return
@@ -51,7 +53,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 	session := sessions.Default(c)
 	session.Set("auth_id", id)
-	session.Set("session_id", token)
+	session.Set("session_id", tk.ID)
 	session.Save()
 
 	body := gin.H{

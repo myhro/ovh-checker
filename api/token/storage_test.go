@@ -14,7 +14,7 @@ import (
 type TokenStorageTestSuite struct {
 	suite.Suite
 
-	storage *TokenStorage
+	storage *Storage
 	mini    *miniredis.Miniredis
 }
 
@@ -36,7 +36,7 @@ func (s *TokenStorageTestSuite) SetupTest() {
 		Client: redis.NewClient(opts),
 	}
 
-	s.storage = &TokenStorage{
+	s.storage = &Storage{
 		Cache: cache,
 	}
 }
@@ -49,12 +49,10 @@ func (s *TokenStorageTestSuite) TestListAll() {
 	id := 1
 
 	authPrefix := prefixes[Auth]
-	authToken := NewAuthToken(id)
-	authToken.Storage = s.storage
+	authToken := NewAuthToken(id, s.storage.Cache)
 
 	sessionPrefix := prefixes[Session]
-	sessionToken := NewSessionToken(id)
-	sessionToken.Storage = s.storage
+	sessionToken := NewSessionToken(id, s.storage.Cache)
 
 	hash, err := s.storage.ListAll(id)
 	assert.NoError(s.T(), err)
@@ -85,10 +83,9 @@ func (s *TokenStorageTestSuite) TestListAllError() {
 }
 
 func (s *TokenStorageTestSuite) TestLoad() {
-	token := NewAuthToken(1)
+	token := NewAuthToken(1, s.storage.Cache)
 	token.Client = "token-storage-test"
 	token.IP = "127.0.0.1"
-	token.Storage = s.storage
 
 	err := token.Save()
 	assert.NoError(s.T(), err)
@@ -109,8 +106,7 @@ func (s *TokenStorageTestSuite) TestLoad() {
 }
 
 func (s *TokenStorageTestSuite) TestLoadError() {
-	token := NewAuthToken(1)
-	token.Storage = s.storage
+	token := NewAuthToken(1, s.storage.Cache)
 
 	s.mini.Close()
 
@@ -120,8 +116,7 @@ func (s *TokenStorageTestSuite) TestLoadError() {
 }
 
 func (s *TokenStorageTestSuite) TestLoadNonExistentToken() {
-	token := NewAuthToken(1)
-	token.Storage = s.storage
+	token := NewAuthToken(1, s.storage.Cache)
 
 	_, err := s.storage.Load(token.Type, token.UserID, token.ID)
 	assert.Error(s.T(), err)

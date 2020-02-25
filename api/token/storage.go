@@ -6,13 +6,16 @@ import (
 	"github.com/myhro/ovh-checker/storage"
 )
 
+// ErrNoToken is returned when a token isn't found
 var ErrNoToken = errors.New("non-existent token")
 
-type TokenStorage struct {
+// Storage holds the underlying token storage
+type Storage struct {
 	Cache storage.Cache
 }
 
-func (ts *TokenStorage) List(token *Token) ([]Token, error) {
+// List returns the list which the token is part of
+func (ts *Storage) List(token *Token) ([]Token, error) {
 	token.Storage = ts
 
 	set, err := token.Set()
@@ -32,9 +35,10 @@ func (ts *TokenStorage) List(token *Token) ([]Token, error) {
 	return list, nil
 }
 
-func (ts *TokenStorage) ListAll(userID int) (map[string][]Token, error) {
-	authToken := NewAuthToken(userID)
-	sessionToken := NewSessionToken(userID)
+// ListAll returns all token lists
+func (ts *Storage) ListAll(userID int) (map[string][]Token, error) {
+	authToken := NewAuthToken(userID, ts.Cache)
+	sessionToken := NewSessionToken(userID, ts.Cache)
 
 	authList, err := ts.List(authToken)
 	if err != nil {
@@ -56,7 +60,8 @@ func (ts *TokenStorage) ListAll(userID int) (map[string][]Token, error) {
 	return result, nil
 }
 
-func (ts *TokenStorage) Load(tt TokenType, userID int, tokenID string) (*Token, error) {
+// Load loads a token from storage
+func (ts *Storage) Load(tt Type, userID int, tokenID string) (*Token, error) {
 	t := &Token{
 		ID:     tokenID,
 		Type:   tt,

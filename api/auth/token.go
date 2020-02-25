@@ -8,13 +8,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
-	"github.com/satori/go.uuid"
+	"github.com/myhro/ovh-checker/api/token"
 )
 
 const (
 	incorrectEmailTokenError = "incorrect email or token"
 	invalidPairError         = "invalid email/token pair"
 )
+
+func getToken(c *gin.Context) *token.Token {
+	tk, _ := c.Get("token")
+	return tk.(*token.Token)
+}
 
 func hasTokenAuth(c *gin.Context) bool {
 	header := c.GetHeader("Authorization")
@@ -50,7 +55,7 @@ func parseTokenAuth(c *gin.Context) (string, string, error) {
 }
 
 func (h *Handler) checkTokenAuth(c *gin.Context) {
-	email, token, err := parseTokenAuth(c)
+	email, tokenID, err := parseTokenAuth(c)
 	if err != nil {
 		errors.UnauthorizedWithMessage(c, invalidPairError)
 		return
@@ -67,18 +72,17 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 		return
 	}
 
-	key := tokenSetKey(authStoragePrefix, id)
-	exists, err := h.Cache.SIsMember(key, token)
-	if err != nil {
+	tk, err := token.LoadAuthToken(id, tokenID, h.Cache)
+	if err == token.ErrNoToken {
+		errors.UnauthorizedWithMessage(c, incorrectEmailTokenError)
+		return
+	} else if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
 		return
-	} else if !exists {
-		errors.UnauthorizedWithMessage(c, incorrectEmailTokenError)
-		return
 	}
 
-	err = h.updateTokenLastUsed(authStoragePrefix, id, token)
+	err = tk.UpdateLastUsed()
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
@@ -86,19 +90,5 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 	}
 
 	c.Set("auth_id", id)
-	c.Set("email", email)
-	c.Set("token", token)
-}
-
-func (h *Handler) newToken(c *gin.Context, id int) (string, error) {
-	client := c.GetHeader("User-Agent")
-	ip := c.ClientIP()
-	token := uuid.NewV4().String()
-
-	err := h.addToken(authStoragePrefix, id, token, client, ip)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
+	c.Set("token", tk)
 }

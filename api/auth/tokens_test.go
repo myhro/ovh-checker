@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
+	"github.com/myhro/ovh-checker/api/token"
 	"github.com/myhro/ovh-checker/storage"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,55 +48,36 @@ func (s *TokensTestSuite) SetupTest() {
 
 	gin.SetMode(gin.ReleaseMode)
 	s.router = gin.New()
-	s.router.GET("/", s.handler.Tokens)
 }
 
 func (s *TokensTestSuite) TearDownTest() {
 	s.mini.Close()
 }
 
-func (s *TokensTestSuite) TestCacheErrorFetchingTokenDetail() {
-	cache := &tests.MockedCache{}
-	cache.On("SMembers", mock.Anything).Return([]string{"xyz"}, nil)
-	cache.On("HGetAll", mock.Anything).Return(map[string]string{}, errors.New("cache error"))
-	s.handler.Cache = cache
+func (s *TokensTestSuite) TestCacheError() {
+	s.router.GET("/", s.handler.Tokens)
+
+	s.mini.Close()
 
 	w := tests.Get(s.router, "/")
 
 	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
 	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
-}
-
-func (s *TokensTestSuite) TestCacheErrorFetchingTokenSet() {
-	cache := &tests.MockedCache{}
-	cache.On("SMembers", mock.Anything).Return([]string{}, errors.New("cache error"))
-	s.handler.Cache = cache
-
-	w := tests.Get(s.router, "/")
-
-	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
-	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
-}
-
-func (s *TokensTestSuite) TestMultipleTokens() {
-	token1 := "xyz"
-	token2 := "abc"
-	s.handler.addToken(authStoragePrefix, 0, token1, "tokens-test", "127.0.0.1")
-	s.handler.addToken(authStoragePrefix, 0, token2, "tokens-test", "127.0.0.1")
-
-	w := tests.Get(s.router, "/")
-
-	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Regexp(s.T(), `"id":"xyz"`, w.Body.String())
-	assert.Regexp(s.T(), `"id":"abc"`, w.Body.String())
 }
 
 func (s *TokensTestSuite) TestSingleToken() {
-	token := "xyz"
-	s.handler.addToken(authStoragePrefix, 0, token, "tokens-test", "127.0.0.1")
+	id := 1
+	tk := token.NewAuthToken(id, s.handler.Cache)
+	err := tk.Save()
+	assert.NoError(s.T(), err)
+
+	tests.SetGinContext(s.router, map[string]interface{}{
+		"auth_id": id,
+	})
+	s.router.GET("/", s.handler.Tokens)
 
 	w := tests.Get(s.router, "/")
 
 	assert.Equal(s.T(), http.StatusOK, w.Code)
-	assert.Regexp(s.T(), `"id":"xyz"`, w.Body.String())
+	assert.Regexp(s.T(), fmt.Sprintf(`"id":"%v"`, tk.ID), w.Body.String())
 }

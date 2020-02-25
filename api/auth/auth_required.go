@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
+	"github.com/myhro/ovh-checker/api/token"
 )
 
 const (
@@ -18,20 +19,19 @@ func (h *Handler) AuthRequired(c *gin.Context) {
 	session := sessions.Default(c)
 	sessionID := session.Get("session_id")
 	if sessionID != nil {
-		token := sessionID.(string)
 		id := session.Get("auth_id").(int)
 
-		valid, err := h.validToken(sessionStoragePrefix, id, token)
-		if err != nil {
+		tk, err := token.LoadSessionToken(id, sessionID.(string), h.Cache)
+		if err == token.ErrNoToken {
+			errors.UnauthorizedWithMessage(c, invalidSessionError)
+			return
+		} else if err != nil {
 			log.Print(err)
 			errors.InternalServerError(c)
 			return
-		} else if !valid {
-			errors.UnauthorizedWithMessage(c, invalidSessionError)
-			return
 		}
 
-		err = h.updateTokenLastUsed(sessionStoragePrefix, id, token)
+		err = tk.UpdateLastUsed()
 		if err != nil {
 			log.Print(err)
 			errors.InternalServerError(c)
@@ -39,7 +39,7 @@ func (h *Handler) AuthRequired(c *gin.Context) {
 		}
 
 		c.Set("auth_id", id)
-
+		c.Set("token", tk)
 		return
 	} else if hasTokenAuth(c) {
 		h.checkTokenAuth(c)
