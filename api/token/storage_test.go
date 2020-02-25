@@ -48,16 +48,13 @@ func (s *TokenStorageTestSuite) TearDownTest() {
 func (s *TokenStorageTestSuite) TestListAll() {
 	id := 1
 
-	authPrefix := prefixes[Auth]
-	authToken := NewAuthToken(id, s.storage.Cache)
-
-	sessionPrefix := prefixes[Session]
-	sessionToken := NewSessionToken(id, s.storage.Cache)
+	authToken := s.storage.NewAuthToken(id)
+	sessionToken := s.storage.NewSessionToken(id)
 
 	hash, err := s.storage.ListAll(id)
 	assert.NoError(s.T(), err)
-	assert.Len(s.T(), hash[authPrefix], 0)
-	assert.Len(s.T(), hash[sessionPrefix], 0)
+	assert.Len(s.T(), hash[AuthPrefix], 0)
+	assert.Len(s.T(), hash[SessionPrefix], 0)
 
 	err = authToken.Save()
 	assert.NoError(s.T(), err)
@@ -66,31 +63,28 @@ func (s *TokenStorageTestSuite) TestListAll() {
 
 	hash, err = s.storage.ListAll(id)
 	assert.NoError(s.T(), err)
-	assert.Len(s.T(), hash[authPrefix], 1)
-	assert.Len(s.T(), hash[sessionPrefix], 1)
+	assert.Len(s.T(), hash[AuthPrefix], 1)
+	assert.Len(s.T(), hash[SessionPrefix], 1)
 }
 
 func (s *TokenStorageTestSuite) TestListAllError() {
-	authPrefix := prefixes[Auth]
-	sessionPrefix := prefixes[Session]
-
 	s.mini.Close()
 
 	hash, err := s.storage.ListAll(1)
 	assert.Error(s.T(), err)
-	assert.Len(s.T(), hash[authPrefix], 0)
-	assert.Len(s.T(), hash[sessionPrefix], 0)
+	assert.Len(s.T(), hash[AuthPrefix], 0)
+	assert.Len(s.T(), hash[SessionPrefix], 0)
 }
 
 func (s *TokenStorageTestSuite) TestLoad() {
-	token := NewAuthToken(1, s.storage.Cache)
+	token := s.storage.NewAuthToken(1)
 	token.Client = "token-storage-test"
 	token.IP = "127.0.0.1"
 
 	err := token.Save()
 	assert.NoError(s.T(), err)
 
-	loaded, err := s.storage.Load(token.Type, token.UserID, token.ID)
+	loaded, err := s.storage.LoadAuthToken(token.UserID, token.ID)
 	assert.NoError(s.T(), err)
 
 	assert.Equal(s.T(), token.Key, loaded.Key)
@@ -106,19 +100,17 @@ func (s *TokenStorageTestSuite) TestLoad() {
 }
 
 func (s *TokenStorageTestSuite) TestLoadError() {
-	token := NewAuthToken(1, s.storage.Cache)
+	token := s.storage.NewSessionToken(1)
 
 	s.mini.Close()
 
-	_, err := s.storage.Load(token.Type, token.UserID, token.ID)
+	_, err := s.storage.LoadSessionToken(token.UserID, token.ID)
 	assert.Error(s.T(), err)
 	assert.NotEqual(s.T(), ErrNoToken, err)
 }
 
 func (s *TokenStorageTestSuite) TestLoadNonExistentToken() {
-	token := NewAuthToken(1, s.storage.Cache)
-
-	_, err := s.storage.Load(token.Type, token.UserID, token.ID)
+	_, err := s.storage.LoadAuthToken(1, "xyz")
 	assert.Error(s.T(), err)
 	assert.Equal(s.T(), ErrNoToken, err)
 }

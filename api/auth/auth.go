@@ -1,15 +1,16 @@
 package auth
 
 import (
+	"github.com/myhro/ovh-checker/api/token"
 	"github.com/myhro/ovh-checker/storage"
 	"github.com/nleof/goyesql"
 )
 
 // Handler holds objects to be reused between requests, like a database connection
 type Handler struct {
-	Cache   storage.Cache
-	DB      storage.DB
-	Queries goyesql.Queries
+	DB           storage.DB
+	Queries      goyesql.Queries
+	TokenStorage *token.Storage
 }
 
 // NewHandler creates a new Handler
@@ -19,10 +20,14 @@ func NewHandler(cache storage.Cache, db storage.DB) (*Handler, error) {
 		return nil, err
 	}
 
+	ts := &token.Storage{
+		Cache: cache,
+	}
+
 	handler := Handler{
-		Cache:   cache,
-		DB:      db,
-		Queries: queries,
+		DB:           db,
+		Queries:      queries,
+		TokenStorage: ts,
 	}
 
 	return &handler, nil

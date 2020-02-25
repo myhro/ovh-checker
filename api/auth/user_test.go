@@ -43,8 +43,12 @@ func (s *UserTestSuite) SetupTest() {
 	opts := &redis.Options{
 		Addr: s.mini.Addr(),
 	}
-	s.handler.Cache = &storage.Redis{
+	cache := &storage.Redis{
 		Client: redis.NewClient(opts),
+	}
+
+	s.handler.TokenStorage = &token.Storage{
+		Cache: cache,
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -56,7 +60,7 @@ func (s *UserTestSuite) TearDownTest() {
 }
 
 func (s *UserTestSuite) TestCacheError() {
-	tk := token.NewAuthToken(1, s.handler.Cache)
+	tk := s.handler.TokenStorage.NewAuthToken(1)
 	err := tk.Save()
 	assert.NoError(s.T(), err)
 
@@ -78,7 +82,7 @@ func (s *UserTestSuite) TestDatabaseError() {
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("database error"))
 	s.handler.DB = db
 
-	tk := token.NewAuthToken(1, s.handler.Cache)
+	tk := s.handler.TokenStorage.NewAuthToken(1)
 	err := tk.Save()
 	assert.NoError(s.T(), err)
 
@@ -98,7 +102,7 @@ func (s *UserTestSuite) TestSingleToken() {
 	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	s.handler.DB = db
 
-	tk := token.NewAuthToken(1, s.handler.Cache)
+	tk := s.handler.TokenStorage.NewAuthToken(1)
 	err := tk.Save()
 	assert.NoError(s.T(), err)
 

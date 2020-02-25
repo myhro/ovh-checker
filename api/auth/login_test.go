@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/myhro/ovh-checker/api/tests"
+	"github.com/myhro/ovh-checker/api/token"
 	"github.com/myhro/ovh-checker/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -47,8 +48,12 @@ func (s *LoginTestSuite) SetupTest() {
 	opts := &redis.Options{
 		Addr: s.mini.Addr(),
 	}
-	s.handler.Cache = &storage.Redis{
+	cache := &storage.Redis{
 		Client: redis.NewClient(opts),
+	}
+
+	s.handler.TokenStorage = &token.Storage{
+		Cache: cache,
 	}
 
 	store := cookie.NewStore([]byte("login-test"))

@@ -15,8 +15,8 @@ import (
 type TokenTestSuite struct {
 	suite.Suite
 
-	cache storage.Cache
-	mini  *miniredis.Miniredis
+	mini    *miniredis.Miniredis
+	storage *Storage
 }
 
 func TestTokenTestSuite(t *testing.T) {
@@ -33,8 +33,12 @@ func (s *TokenTestSuite) SetupTest() {
 	opts := &redis.Options{
 		Addr: s.mini.Addr(),
 	}
-	s.cache = &storage.Redis{
+	cache := &storage.Redis{
 		Client: redis.NewClient(opts),
+	}
+
+	s.storage = &Storage{
+		Cache: cache,
 	}
 }
 
@@ -43,14 +47,14 @@ func (s *TokenTestSuite) TearDownTest() {
 }
 
 func (s *TokenTestSuite) TestAuthToken() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	assert.Len(s.T(), token.ID, 36)
 	assert.Equal(s.T(), 4, strings.Count(token.ID, "-"))
 }
 
 func (s *TokenTestSuite) TestCount() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	count, err := token.Count()
 	assert.NoError(s.T(), err)
@@ -65,7 +69,7 @@ func (s *TokenTestSuite) TestCount() {
 }
 
 func (s *TokenTestSuite) TestCountError() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	s.mini.Close()
 
@@ -75,7 +79,7 @@ func (s *TokenTestSuite) TestCountError() {
 }
 
 func (s *TokenTestSuite) TestDelete() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	err := token.Save()
 	assert.NoError(s.T(), err)
@@ -93,7 +97,7 @@ func (s *TokenTestSuite) TestDelete() {
 }
 
 func (s *TokenTestSuite) TestDeleteError() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	s.mini.Close()
 
@@ -102,7 +106,7 @@ func (s *TokenTestSuite) TestDeleteError() {
 }
 
 func (s *TokenTestSuite) TestField() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	table := []struct {
 		in  string
@@ -144,7 +148,7 @@ func (s *TokenTestSuite) TestField() {
 }
 
 func (s *TokenTestSuite) TestInvalid() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	valid, err := token.Valid()
 	assert.NoError(s.T(), err)
@@ -152,8 +156,8 @@ func (s *TokenTestSuite) TestInvalid() {
 }
 
 func (s *TokenTestSuite) TestKeys() {
-	authToken := NewAuthToken(1, s.cache)
-	sessionToken := NewSessionToken(1, s.cache)
+	authToken := s.storage.NewAuthToken(1)
+	sessionToken := s.storage.NewSessionToken(1)
 
 	table := []struct {
 		in  string
@@ -183,7 +187,7 @@ func (s *TokenTestSuite) TestKeys() {
 }
 
 func (s *TokenTestSuite) TestLastUsed() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	lastUsed := token.LastUsedAt
 
@@ -197,7 +201,7 @@ func (s *TokenTestSuite) TestLastUsed() {
 }
 
 func (s *TokenTestSuite) TestLastUsedError() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	err := token.Save()
 	assert.NoError(s.T(), err)
@@ -212,14 +216,14 @@ func (s *TokenTestSuite) TestLastUsedError() {
 }
 
 func (s *TokenTestSuite) TestSave() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	err := token.Save()
 	assert.NoError(s.T(), err)
 }
 
 func (s *TokenTestSuite) TestSaveError() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	s.mini.Close()
 
@@ -228,14 +232,14 @@ func (s *TokenTestSuite) TestSaveError() {
 }
 
 func (s *TokenTestSuite) TestSessionToken() {
-	token := NewSessionToken(1, s.cache)
+	token := s.storage.NewSessionToken(1)
 
 	assert.Len(s.T(), token.ID, 32)
 	assert.Equal(s.T(), 0, strings.Count(token.ID, "-"))
 }
 
 func (s *TokenTestSuite) TestSet() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	set, err := token.Set()
 	assert.NoError(s.T(), err)
@@ -250,7 +254,7 @@ func (s *TokenTestSuite) TestSet() {
 }
 
 func (s *TokenTestSuite) TestSetError() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	s.mini.Close()
 
@@ -260,7 +264,7 @@ func (s *TokenTestSuite) TestSetError() {
 }
 
 func (s *TokenTestSuite) TestValid() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	err := token.Save()
 	assert.NoError(s.T(), err)
@@ -271,7 +275,7 @@ func (s *TokenTestSuite) TestValid() {
 }
 
 func (s *TokenTestSuite) TestValidError() {
-	token := NewAuthToken(1, s.cache)
+	token := s.storage.NewAuthToken(1)
 
 	s.mini.Close()
 

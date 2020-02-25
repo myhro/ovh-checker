@@ -42,8 +42,12 @@ func (s *TokensTestSuite) SetupTest() {
 	opts := &redis.Options{
 		Addr: s.mini.Addr(),
 	}
-	s.handler.Cache = &storage.Redis{
+	cache := &storage.Redis{
 		Client: redis.NewClient(opts),
+	}
+
+	s.handler.TokenStorage = &token.Storage{
+		Cache: cache,
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -67,7 +71,7 @@ func (s *TokensTestSuite) TestCacheError() {
 
 func (s *TokensTestSuite) TestSingleToken() {
 	id := 1
-	tk := token.NewAuthToken(id, s.handler.Cache)
+	tk := s.handler.TokenStorage.NewAuthToken(id)
 	err := tk.Save()
 	assert.NoError(s.T(), err)
 

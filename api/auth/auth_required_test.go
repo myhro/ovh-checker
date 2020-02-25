@@ -49,8 +49,12 @@ func (s *AuthRequiredTestSuite) SetupTest() {
 	opts := &redis.Options{
 		Addr: s.mini.Addr(),
 	}
-	s.handler.Cache = &storage.Redis{
+	cache := &storage.Redis{
 		Client: redis.NewClient(opts),
+	}
+
+	s.handler.TokenStorage = &token.Storage{
+		Cache: cache,
 	}
 
 	store := cookie.NewStore([]byte("login-test"))
@@ -189,7 +193,7 @@ func (s *AuthRequiredTestSuite) TestSessionCacheError() {
 
 func (s *AuthRequiredTestSuite) TestValidSession() {
 	id := 1
-	tk := token.NewSessionToken(id, s.handler.Cache)
+	tk := s.handler.TokenStorage.NewSessionToken(id)
 	err := tk.Save()
 	assert.NoError(s.T(), err)
 

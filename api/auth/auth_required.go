@@ -21,7 +21,7 @@ func (h *Handler) AuthRequired(c *gin.Context) {
 	if sessionID != nil {
 		id := session.Get("auth_id").(int)
 
-		tk, err := token.LoadSessionToken(id, sessionID.(string), h.Cache)
+		tk, err := h.TokenStorage.LoadSessionToken(id, sessionID.(string))
 		if err == token.ErrNoToken {
 			errors.UnauthorizedWithMessage(c, invalidSessionError)
 			return

@@ -72,7 +72,7 @@ func (h *Handler) checkTokenAuth(c *gin.Context) {
 		return
 	}
 
-	tk, err := token.LoadAuthToken(id, tokenID, h.Cache)
+	tk, err := h.TokenStorage.LoadAuthToken(id, tokenID)
 	if err == token.ErrNoToken {
 		errors.UnauthorizedWithMessage(c, incorrectEmailTokenError)
 		return

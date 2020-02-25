@@ -6,17 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
-	"github.com/myhro/ovh-checker/api/token"
 )
 
 // Tokens returns the list of tokens for the current user
 func (h *Handler) Tokens(c *gin.Context) {
 	id := c.GetInt("auth_id")
-	storage := token.Storage{
-		Cache: h.Cache,
-	}
 
-	tokens, err := storage.ListAll(id)
+	tokens, err := h.TokenStorage.ListAll(id)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
