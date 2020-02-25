@@ -1,19 +1,12 @@
 package auth
 
 import (
-	"database/sql"
-	"encoding/base64"
 	"log"
-	"strings"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/errors"
 	"github.com/myhro/ovh-checker/api/token"
-)
-
-const (
-	incorrectEmailTokenError = "incorrect email or token"
-	invalidPairError         = "invalid email/token pair"
 )
 
 func getToken(c *gin.Context) *token.Token {
@@ -21,74 +14,47 @@ func getToken(c *gin.Context) *token.Token {
 	return tk.(*token.Token)
 }
 
-func hasTokenAuth(c *gin.Context) bool {
-	header := c.GetHeader("Authorization")
-	if header == "" {
-		return false
-	}
-	if !strings.HasPrefix(header, "Token ") {
-		return false
-	}
-	return true
+func (h *Handler) newAuthToken(c *gin.Context, id int) (*token.Token, error) {
+	return h.newToken(c, token.Auth, id)
 }
 
-func parseTokenAuth(c *gin.Context) (string, string, error) {
-	var email, token string
-
-	header := c.GetHeader("Authorization")
-	pair := strings.Split(header, "Token ")[1]
-	data, err := base64.StdEncoding.DecodeString(pair)
-	if err != nil {
-		return "", "", err
-	}
-
-	pair = string(data)
-	if !strings.Contains(pair, ":") {
-		return "", "", errors.New(invalidPairError)
-	}
-
-	list := strings.Split(pair, ":")
-	email = strings.TrimSpace(list[0])
-	token = strings.TrimSpace(list[1])
-
-	return email, token, nil
+func (h *Handler) newSessionToken(c *gin.Context, id int) (*token.Token, error) {
+	return h.newToken(c, token.Session, id)
 }
 
-func (h *Handler) checkTokenAuth(c *gin.Context) {
-	email, tokenID, err := parseTokenAuth(c)
+func (h *Handler) newToken(c *gin.Context, tt token.Type, id int) (*token.Token, error) {
+	var tk *token.Token
+	switch tt {
+	case token.Auth:
+		tk = h.TokenStorage.NewAuthToken(id)
+	case token.Session:
+		tk = h.TokenStorage.NewSessionToken(id)
+	}
+
+	tk.Client = c.GetHeader("User-Agent")
+	tk.IP = c.ClientIP()
+	err := tk.Save()
+
 	if err != nil {
-		errors.UnauthorizedWithMessage(c, invalidPairError)
-		return
+		return nil, err
 	}
 
-	var id int
-	err = h.DB.Get(&id, h.Queries["user-exists"], email)
-	if err != nil && err != sql.ErrNoRows {
-		log.Print(err)
-		errors.InternalServerError(c)
-		return
-	} else if err == sql.ErrNoRows {
-		errors.UnauthorizedWithMessage(c, incorrectEmailTokenError)
-		return
-	}
+	return tk, nil
+}
 
-	tk, err := h.TokenStorage.LoadAuthToken(id, tokenID)
-	if err == token.ErrNoToken {
-		errors.UnauthorizedWithMessage(c, incorrectEmailTokenError)
-		return
-	} else if err != nil {
-		log.Print(err)
-		errors.InternalServerError(c)
-		return
-	}
-
-	err = tk.UpdateLastUsed()
+// Token creates a new Auth token
+func (h *Handler) Token(c *gin.Context) {
+	id := c.GetInt("auth_id")
+	tk, err := h.newAuthToken(c, id)
 	if err != nil {
 		log.Print(err)
 		errors.InternalServerError(c)
 		return
 	}
 
-	c.Set("auth_id", id)
-	c.Set("token", tk)
+	body := gin.H{
+		"token": tk.ID,
+	}
+
+	c.JSON(http.StatusOK, body)
 }

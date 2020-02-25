@@ -3,6 +3,7 @@ package token
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/myhro/ovh-checker/storage"
 	"github.com/satori/go.uuid"
@@ -25,7 +26,7 @@ func (s *Storage) List(token *Token) ([]Token, error) {
 
 	list := make([]Token, 0)
 	for _, tokenID := range set {
-		t, err := s.load(token.Type, token.UserID, tokenID)
+		t, err := s.load(token.Type, tokenID)
 		if err != nil {
 			return nil, err
 		}
@@ -58,12 +59,11 @@ func (s *Storage) ListAll(userID int) (map[string][]Token, error) {
 }
 
 // Load loads a token from storage
-func (s *Storage) load(tt Type, userID int, tokenID string) (*Token, error) {
+func (s *Storage) load(tt Type, tokenID string) (*Token, error) {
 	t := &Token{
-		Cache:  s.Cache,
-		ID:     tokenID,
-		Type:   tt,
-		UserID: userID,
+		Cache: s.Cache,
+		ID:    tokenID,
+		Type:  tt,
 	}
 	t.keys()
 
@@ -74,23 +74,30 @@ func (s *Storage) load(tt Type, userID int, tokenID string) (*Token, error) {
 		return nil, ErrNoToken
 	}
 
-	t.ID = details[t.field("ID")]
-	t.Client = details[t.field("Client")]
-	t.IP = details[t.field("IP")]
-	t.CreatedAt = storage.ParseTime(details[t.field("CreatedAt")])
-	t.LastUsedAt = storage.ParseTime(details[t.field("LastUsedAt")])
+	userID, err := strconv.Atoi(details[t.dbField("UserID")])
+	if err != nil {
+		return nil, err
+	}
+
+	t.UserID = userID
+	t.ID = details[t.dbField("ID")]
+	t.Client = details[t.dbField("Client")]
+	t.IP = details[t.dbField("IP")]
+	t.CreatedAt = storage.ParseTime(details[t.dbField("CreatedAt")])
+	t.LastUsedAt = storage.ParseTime(details[t.dbField("LastUsedAt")])
+	t.keys()
 
 	return t, nil
 }
 
 // LoadAuthToken loads an existing Auth token from storage
-func (s *Storage) LoadAuthToken(userID int, tokenID string) (*Token, error) {
-	return s.load(Auth, userID, tokenID)
+func (s *Storage) LoadAuthToken(tokenID string) (*Token, error) {
+	return s.load(Auth, tokenID)
 }
 
 // LoadSessionToken loads an existing Session token from storage
-func (s *Storage) LoadSessionToken(userID int, sessionID string) (*Token, error) {
-	return s.load(Session, userID, sessionID)
+func (s *Storage) LoadSessionToken(tokenID string) (*Token, error) {
+	return s.load(Session, tokenID)
 }
 
 // NewAuthToken creates a new Auth token

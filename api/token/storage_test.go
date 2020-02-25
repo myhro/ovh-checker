@@ -84,7 +84,7 @@ func (s *TokenStorageTestSuite) TestLoad() {
 	err := token.Save()
 	assert.NoError(s.T(), err)
 
-	loaded, err := s.storage.LoadAuthToken(token.UserID, token.ID)
+	loaded, err := s.storage.LoadAuthToken(token.ID)
 	assert.NoError(s.T(), err)
 
 	assert.Equal(s.T(), token.Key, loaded.Key)
@@ -104,13 +104,13 @@ func (s *TokenStorageTestSuite) TestLoadError() {
 
 	s.mini.Close()
 
-	_, err := s.storage.LoadSessionToken(token.UserID, token.ID)
+	_, err := s.storage.LoadSessionToken(token.ID)
 	assert.Error(s.T(), err)
 	assert.NotEqual(s.T(), ErrNoToken, err)
 }
 
 func (s *TokenStorageTestSuite) TestLoadNonExistentToken() {
-	_, err := s.storage.LoadAuthToken(1, "xyz")
+	_, err := s.storage.LoadAuthToken("xyz")
 	assert.Error(s.T(), err)
 	assert.Equal(s.T(), ErrNoToken, err)
 }

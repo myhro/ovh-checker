@@ -1,20 +1,10 @@
 package tests
 
 import (
-	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 )
-
-// AuthHeader returns a base64-encoded Authorization token header
-func AuthHeader(email, token string) string {
-	pair := fmt.Sprintf("%v:%v", email, token)
-	encoded := base64.StdEncoding.EncodeToString([]byte(pair))
-	header := "Token " + encoded
-	return header
-}
 
 // Get does an HTTP GET request against an HTTP handler
 func Get(r http.Handler, path string) *httptest.ResponseRecorder {

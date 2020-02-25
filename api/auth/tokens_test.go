@@ -69,9 +69,26 @@ func (s *TokensTestSuite) TestCacheError() {
 	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
-func (s *TokensTestSuite) TestSingleToken() {
+func (s *TokensTestSuite) TestSingleAuthToken() {
 	id := 1
 	tk := s.handler.TokenStorage.NewAuthToken(id)
+	err := tk.Save()
+	assert.NoError(s.T(), err)
+
+	tests.SetGinContext(s.router, map[string]interface{}{
+		"auth_id": id,
+	})
+	s.router.GET("/", s.handler.Tokens)
+
+	w := tests.Get(s.router, "/")
+
+	assert.Equal(s.T(), http.StatusOK, w.Code)
+	assert.Regexp(s.T(), fmt.Sprintf(`"id":"%v"`, tk.ID), w.Body.String())
+}
+
+func (s *TokensTestSuite) TestSingleSessionToken() {
+	id := 1
+	tk := s.handler.TokenStorage.NewSessionToken(id)
 	err := tk.Save()
 	assert.NoError(s.T(), err)
 

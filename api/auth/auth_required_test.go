@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"database/sql"
-	"encoding/base64"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -22,7 +20,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var validTokenHeader = tests.AuthHeader("user@example.com", "xyz")
+var dummyAuthHeaders = map[string]string{
+	"Authorization": "Token xyz",
+}
 
 type AuthRequiredTestSuite struct {
 	suite.Suite
@@ -70,47 +70,12 @@ func (s *AuthRequiredTestSuite) TearDownTest() {
 }
 
 func (s *AuthRequiredTestSuite) TestCacheError() {
-	db := &tests.MockedDatabase{}
-	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	s.handler.DB = db
-
 	s.mini.Close()
 
-	headers := map[string]string{
-		"Authorization": validTokenHeader,
-	}
-	w := tests.GetWithHeaders(s.router, "/", headers)
+	w := tests.GetWithHeaders(s.router, "/", dummyAuthHeaders)
 
 	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
 	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
-}
-
-func (s *AuthRequiredTestSuite) TestDatabaseError() {
-	db := &tests.MockedDatabase{}
-	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("database error"))
-	s.handler.DB = db
-
-	headers := map[string]string{
-		"Authorization": validTokenHeader,
-	}
-	w := tests.GetWithHeaders(s.router, "/", headers)
-
-	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
-	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
-}
-
-func (s *AuthRequiredTestSuite) TestExistingUserTokenNotInRedis() {
-	db := &tests.MockedDatabase{}
-	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	s.handler.DB = db
-
-	headers := map[string]string{
-		"Authorization": validTokenHeader,
-	}
-	w := tests.GetWithHeaders(s.router, "/", headers)
-
-	assert.Equal(s.T(), http.StatusUnauthorized, w.Code)
-	assert.Regexp(s.T(), incorrectEmailTokenError, w.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestInvalidSession() {
@@ -137,18 +102,17 @@ func (s *AuthRequiredTestSuite) TestInvalidToken() {
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
 	assert.Equal(s.T(), http.StatusUnauthorized, w.Code)
-	assert.Regexp(s.T(), invalidPairError, w.Body.String())
+	assert.Regexp(s.T(), invalidAuthError, w.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestMalformedToken() {
-	token := base64.StdEncoding.EncodeToString([]byte("xyz"))
 	headers := map[string]string{
-		"Authorization": "Token " + token,
+		"Authorization": "Tokenxyz",
 	}
 	w := tests.GetWithHeaders(s.router, "/", headers)
 
 	assert.Equal(s.T(), http.StatusUnauthorized, w.Code)
-	assert.Regexp(s.T(), invalidPairError, w.Body.String())
+	assert.Regexp(s.T(), unsupportedAuthError, w.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestMissingHeader() {
@@ -156,20 +120,6 @@ func (s *AuthRequiredTestSuite) TestMissingHeader() {
 
 	assert.Equal(s.T(), http.StatusUnauthorized, w.Code)
 	assert.Regexp(s.T(), unsupportedAuthError, w.Body.String())
-}
-
-func (s *AuthRequiredTestSuite) TestNonExistentUser() {
-	db := &tests.MockedDatabase{}
-	db.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(sql.ErrNoRows)
-	s.handler.DB = db
-
-	headers := map[string]string{
-		"Authorization": validTokenHeader,
-	}
-	w := tests.GetWithHeaders(s.router, "/", headers)
-
-	assert.Equal(s.T(), http.StatusUnauthorized, w.Code)
-	assert.Regexp(s.T(), incorrectEmailTokenError, w.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestSessionCacheError() {
@@ -189,6 +139,23 @@ func (s *AuthRequiredTestSuite) TestSessionCacheError() {
 
 	assert.Equal(s.T(), http.StatusInternalServerError, w2.Code)
 	assert.Equal(s.T(), "Internal Server Error", w2.Body.String())
+}
+
+func (s *AuthRequiredTestSuite) TestUpdateLastUsedCacheError() {
+	tk := s.handler.TokenStorage.NewAuthToken(1)
+
+	cache := &tests.MockedCache{}
+	cache.On("HGetAll", mock.Anything).Return(map[string]string{"id": tk.ID, "user_id": "1"}, nil)
+	cache.On("HSet", mock.Anything, mock.Anything, mock.Anything).Return(false, errors.New("cache error"))
+	s.handler.TokenStorage.Cache = cache
+
+	headers := map[string]string{
+		"Authorization": "Token " + tk.ID,
+	}
+	w := tests.GetWithHeaders(s.router, "/", headers)
+
+	assert.Equal(s.T(), http.StatusInternalServerError, w.Code)
+	assert.Equal(s.T(), "Internal Server Error", w.Body.String())
 }
 
 func (s *AuthRequiredTestSuite) TestValidSession() {

@@ -62,6 +62,7 @@ func (a *API) loadRoutes() {
 	a.router.POST("/auth/login", authHandler.Login)
 	a.router.POST("/auth/logout", authHandler.AuthRequired, authHandler.Logout)
 	a.router.POST("/auth/signup", authHandler.Signup)
+	a.router.POST("/auth/token", authHandler.AuthRequired, authHandler.Token)
 
 	hardwareHandler, err := hardware.NewHandler(a.db)
 	if err != nil {

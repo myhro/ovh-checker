@@ -31,13 +31,13 @@ type Token struct {
 	Key    string        `json:"-"`
 	SetKey string        `json:"-"`
 	Type   Type          `json:"-"`
-	UserID int           `json:"-"`
+	UserID int           `db:"user_id" json:"-"`
 
-	ID         string    `json:"id"`
-	Client     string    `json:"client"`
-	IP         string    `json:"ip"`
-	CreatedAt  time.Time `json:"created_at"`
-	LastUsedAt time.Time `json:"last_used_at"`
+	ID         string    `db:"id" json:"id"`
+	Client     string    `db:"client" json:"client"`
+	IP         string    `db:"ip" json:"ip"`
+	CreatedAt  time.Time `db:"created_at" json:"created_at"`
+	LastUsedAt time.Time `db:"last_used_at" json:"last_used_at"`
 }
 
 // Count returns how many tokens are part of its set
@@ -61,10 +61,10 @@ func (t *Token) Delete() error {
 	return nil
 }
 
-func (t *Token) field(f string) string {
+func (t *Token) dbField(f string) string {
 	field, ok := reflect.TypeOf(t).Elem().FieldByName(f)
 	if ok {
-		v := field.Tag.Get("json")
+		v := field.Tag.Get("db")
 		if v != "-" {
 			return v
 		}
@@ -80,18 +80,19 @@ func (t *Token) keys() {
 	case Session:
 		prefix = SessionPrefix
 	}
-	t.Key = fmt.Sprintf("user:%v:%v:%v", t.UserID, prefix, t.ID)
-	t.SetKey = fmt.Sprintf("user:%v:%v-set", t.UserID, prefix)
+	t.Key = fmt.Sprintf("token-%v:%v", prefix, t.ID)
+	t.SetKey = fmt.Sprintf("user:%v:tokenset-%v", t.UserID, prefix)
 }
 
 // Save adds a token to storage
 func (t *Token) Save() error {
 	details := map[string]interface{}{
-		t.field("ID"):         t.ID,
-		t.field("Client"):     t.Client,
-		t.field("IP"):         t.IP,
-		t.field("CreatedAt"):  storage.TimeFormat(t.CreatedAt),
-		t.field("LastUsedAt"): storage.TimeFormat(t.LastUsedAt),
+		t.dbField("ID"):         t.ID,
+		t.dbField("UserID"):     t.UserID,
+		t.dbField("Client"):     t.Client,
+		t.dbField("IP"):         t.IP,
+		t.dbField("CreatedAt"):  storage.TimeFormat(t.CreatedAt),
+		t.dbField("LastUsedAt"): storage.TimeFormat(t.LastUsedAt),
 	}
 
 	tx := t.Cache.TxPipeline()
@@ -117,7 +118,7 @@ func (t *Token) Set() ([]string, error) {
 // UpdateLastUsed updates the LastUsedAt token information
 func (t *Token) UpdateLastUsed() error {
 	now := storage.Now()
-	_, err := t.Cache.HSet(t.Key, t.field("LastUsedAt"), storage.TimeFormat(now))
+	_, err := t.Cache.HSet(t.Key, t.dbField("LastUsedAt"), storage.TimeFormat(now))
 	if err != nil {
 		return err
 	}

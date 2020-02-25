@@ -41,18 +41,14 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	tk := h.TokenStorage.NewSessionToken(id)
-	tk.Client = c.GetHeader("User-Agent")
-	tk.IP = c.ClientIP()
-	err = tk.Save()
+	token, err := h.newSessionToken(c, id)
 	if err != nil {
 		errors.InternalServerError(c)
 		return
 	}
 
 	session := sessions.Default(c)
-	session.Set("auth_id", id)
-	session.Set("session_id", tk.ID)
+	session.Set("session_id", token.ID)
 	session.Save()
 
 	body := gin.H{

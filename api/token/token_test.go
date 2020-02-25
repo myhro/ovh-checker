@@ -113,31 +113,35 @@ func (s *TokenTestSuite) TestField() {
 		out string
 	}{
 		{
-			in:  token.field("ID"),
+			in:  token.dbField("ID"),
 			out: "id",
 		},
 		{
-			in:  token.field("Client"),
+			in:  token.dbField("Client"),
 			out: "client",
 		},
 		{
-			in:  token.field("IP"),
+			in:  token.dbField("IP"),
 			out: "ip",
 		},
 		{
-			in:  token.field("CreatedAt"),
+			in:  token.dbField("CreatedAt"),
 			out: "created_at",
 		},
 		{
-			in:  token.field("LastUsedAt"),
+			in:  token.dbField("LastUsedAt"),
 			out: "last_used_at",
 		},
 		{
-			in:  token.field("UserID"),
+			in:  token.dbField("UserID"),
+			out: "user_id",
+		},
+		{
+			in:  token.dbField("Type"),
 			out: "",
 		},
 		{
-			in:  token.field("NonExistentStructField"),
+			in:  token.dbField("NonExistentStructField"),
 			out: "",
 		},
 	}
@@ -165,19 +169,19 @@ func (s *TokenTestSuite) TestKeys() {
 	}{
 		{
 			in:  authToken.Key,
-			out: "user:1:auth:" + authToken.ID,
+			out: "token-auth:" + authToken.ID,
 		},
 		{
 			in:  authToken.SetKey,
-			out: "user:1:auth-set",
+			out: "user:1:tokenset-auth",
 		},
 		{
 			in:  sessionToken.Key,
-			out: "user:1:session:" + sessionToken.ID,
+			out: "token-session:" + sessionToken.ID,
 		},
 		{
 			in:  sessionToken.SetKey,
-			out: "user:1:session-set",
+			out: "user:1:tokenset-session",
 		},
 	}
 
