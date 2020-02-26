@@ -44,10 +44,12 @@ type Token struct {
 	LastUsedAt time.Time `db:"last_used_at" json:"last_used_at"`
 }
 
+// AuthTokenKey returns the key used to store the Auth token
 func AuthTokenKey(tokenID string) string {
 	return key(Auth, tokenID)
 }
 
+// AuthTokenSetKey returns the key used to store Auth token in its set
 func AuthTokenSetKey(userID int) string {
 	return setKey(Auth, userID)
 }
@@ -71,10 +73,12 @@ func setKey(tt Type, userID int) string {
 	return fmt.Sprintf("user:%v:tokenset-%v", userID, prefix(tt))
 }
 
+// SessionTokenKey returns the key used to store the Session token
 func SessionTokenKey(tokenID string) string {
 	return key(Session, tokenID)
 }
 
+// SessionTokenSetKey returns the key used to store Session token in its set
 func SessionTokenSetKey(userID int) string {
 	return setKey(Session, userID)
 }

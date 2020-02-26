@@ -56,6 +56,7 @@ func (m *MockedCache) Z(score float64, member interface{}) redis.Z {
 	return redis.Z{}
 }
 
+// ZRangeByScore mocks the same redis.Client method
 func (m *MockedCache) ZRangeByScore(key string, opt redis.ZRangeBy) ([]string, error) {
 	args := m.Called(key, opt)
 	return args[0].([]string), args.Error(1)
