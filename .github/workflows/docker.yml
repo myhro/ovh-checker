@@ -45,3 +45,21 @@ jobs:
         run: |
           make docker
           make push
+  deploy:
+    needs: docker
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: Credentials
+        env:
+          KUBECTL_CFG: ${{ secrets.KUBECTL_CFG }}
+        run: |
+          mkdir -p $HOME/.kube
+          echo "$KUBECTL_CFG" > $HOME/.kube/config
+          kubectl version
+      - name: Deploy
+        env:
+          ENV: staging
+          HOST: ovh.myhro.net
+        run: |
+          make deploy

@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovh-checker-<ENV>-updater
+spec:
+  selector:
+    matchLabels:
+      app: ovh-checker-<ENV>-updater
+  template:
+    metadata:
+      labels:
+        app: ovh-checker-<ENV>-updater
+    spec:
+      containers:
+        - name: updater
+          image: myhro/ovh-checker:<VERSION>
+          command:
+            - /app/updater
+          env:
+            - name: POSTGRES_CONN
+              value: dbname=ovh host=ovh-checker-<ENV>-postgres sslmode=disable

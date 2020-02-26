@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ovh-checker-<ENV>-redis
+spec:
+  selector:
+    matchLabels:
+      app: ovh-checker-<ENV>-redis
+  serviceName: ovh-checker-<ENV>-redis
+  template:
+    metadata:
+      labels:
+        app: ovh-checker-<ENV>-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:4-alpine
+          command:
+            - redis-server
+            - "--appendonly"
+            - "yes"
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ovh-checker-<ENV>-redis

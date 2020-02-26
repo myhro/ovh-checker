@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ovh-checker-<ENV>-api
+spec:
+  selector:
+    app: ovh-checker-<ENV>-api
+  ports:
+    - port: 8080
+      targetPort: 8080

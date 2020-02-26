@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovh-checker-<ENV>-session-cleaner
+spec:
+  selector:
+    matchLabels:
+      app: ovh-checker-<ENV>-session-cleaner
+  template:
+    metadata:
+      labels:
+        app: ovh-checker-<ENV>-session-cleaner
+    spec:
+      containers:
+        - name: session-cleaner
+          image: myhro/ovh-checker:<VERSION>
+          command:
+            - /app/session-cleaner
+          env:
+            - name: REDIS_ADDR
+              value: ovh-checker-<ENV>-redis:6379

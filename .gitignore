@@ -2,3 +2,4 @@
 dist/
 coverage.html
 coverage.out
+deploy-k8s.yaml

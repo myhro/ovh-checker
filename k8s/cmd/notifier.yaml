@@ -1,0 +1,32 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovh-checker-<ENV>-notifier
+spec:
+  selector:
+    matchLabels:
+      app: ovh-checker-<ENV>-notifier
+  template:
+    metadata:
+      labels:
+        app: ovh-checker-<ENV>-notifier
+    spec:
+      containers:
+        - name: notifier
+          image: myhro/ovh-checker:<VERSION>
+          command:
+            - /app/notifier
+          env:
+            - name: POSTGRES_CONN
+              value: dbname=ovh host=ovh-checker-<ENV>-postgres sslmode=disable
+            - name: OVH_CHECKER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: ovh-checker-<ENV>
+                  key: ovh-checker-email
+            - name: SENDGRID_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ovh-checker-<ENV>
+                  key: sendgrid-api-key

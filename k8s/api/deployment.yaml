@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovh-checker-<ENV>-api
+spec:
+  selector:
+    matchLabels:
+      app: ovh-checker-<ENV>-api
+  template:
+    metadata:
+      labels:
+        app: ovh-checker-<ENV>-api
+    spec:
+      containers:
+        - name: api
+          image: myhro/ovh-checker:<VERSION>
+          command:
+            - /app/api
+          env:
+            - name: COOKIE_STORE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ovh-checker-<ENV>
+                  key: cookie-store-secret
+            - name: GIN_MODE
+              value: release
+            - name: POSTGRES_CONN
+              value: dbname=ovh host=ovh-checker-<ENV>-postgres sslmode=disable
+            - name: REDIS_ADDR
+              value: ovh-checker-<ENV>-redis:6379
+          ports:
+            - containerPort: 8080
