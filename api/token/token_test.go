@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis"
 	"github.com/go-redis/redis"
@@ -265,6 +266,24 @@ func (s *TokenTestSuite) TestSetError() {
 	set, err := token.Set()
 	assert.Error(s.T(), err)
 	assert.Len(s.T(), set, 0)
+}
+
+func (s *TokenTestSuite) TestSetExpiration() {
+	token := s.storage.NewAuthToken(1)
+
+	err := token.SetExpiration()
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), token.ExpiresAt, token.CreatedAt.Add(storage.CookieMaxAge*time.Second))
+}
+
+func (s *TokenTestSuite) TestSetExpirationError() {
+	token := s.storage.NewAuthToken(1)
+
+	s.mini.Close()
+
+	err := token.SetExpiration()
+	assert.Error(s.T(), err)
+	assert.Equal(s.T(), token.ExpiresAt, time.Time{})
 }
 
 func (s *TokenTestSuite) TestValid() {

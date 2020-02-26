@@ -44,3 +44,8 @@ func (m *MockedCache) SMembers(key string) ([]string, error) {
 func (m *MockedCache) TxPipeline() redis.Pipeliner {
 	return nil
 }
+
+// Z mocks the redis.Z struct
+func (m *MockedCache) Z(score float64, member interface{}) redis.Z {
+	return redis.Z{}
+}

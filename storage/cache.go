@@ -14,6 +14,7 @@ type Cache interface {
 	SIsMember(key string, member interface{}) (bool, error)
 	SMembers(key string) ([]string, error)
 	TxPipeline() redis.Pipeliner
+	Z(score float64, member interface{}) redis.Z
 }
 
 // NewCache creates a wrapped Redis client

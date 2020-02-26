@@ -84,6 +84,7 @@ func (s *Storage) load(tt Type, tokenID string) (*Token, error) {
 	t.Client = details[t.dbField("Client")]
 	t.IP = details[t.dbField("IP")]
 	t.CreatedAt = storage.ParseTime(details[t.dbField("CreatedAt")])
+	t.ExpiresAt = storage.ParseTime(details[t.dbField("ExpiresAt")])
 	t.LastUsedAt = storage.ParseTime(details[t.dbField("LastUsedAt")])
 	t.keys()
 

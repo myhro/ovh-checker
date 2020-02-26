@@ -43,3 +43,12 @@ func (r *Redis) SMembers(key string) ([]string, error) {
 func (r *Redis) TxPipeline() redis.Pipeliner {
 	return r.Client.TxPipeline()
 }
+
+// Z wraps the redis.Z struct
+func (r *Redis) Z(score float64, member interface{}) redis.Z {
+	z := redis.Z{
+		Score:  score,
+		Member: member,
+	}
+	return z
+}

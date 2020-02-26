@@ -19,7 +19,17 @@ func (h *Handler) newAuthToken(c *gin.Context, id int) (*token.Token, error) {
 }
 
 func (h *Handler) newSessionToken(c *gin.Context, id int) (*token.Token, error) {
-	return h.newToken(c, token.Session, id)
+	tk, err := h.newToken(c, token.Session, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tk.SetExpiration()
+	if err != nil {
+		return nil, err
+	}
+
+	return tk, nil
 }
 
 func (h *Handler) newToken(c *gin.Context, tt token.Type, id int) (*token.Token, error) {

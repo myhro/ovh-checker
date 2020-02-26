@@ -25,6 +25,9 @@ const (
 	SessionPrefix = "session"
 )
 
+// SessionSetExpirationKey is the key to the set which holds information about session expiration
+const SessionSetExpirationKey = "tokenset-session-expiration"
+
 // Token holds all the token information
 type Token struct {
 	Cache  storage.Cache `json:"-"`
@@ -37,6 +40,7 @@ type Token struct {
 	Client     string    `db:"client" json:"client"`
 	IP         string    `db:"ip" json:"ip"`
 	CreatedAt  time.Time `db:"created_at" json:"created_at"`
+	ExpiresAt  time.Time `db:"expires_at" json:"expires_at"`
 	LastUsedAt time.Time `db:"last_used_at" json:"last_used_at"`
 }
 
@@ -113,6 +117,24 @@ func (t *Token) Set() ([]string, error) {
 		return nil, err
 	}
 	return members, nil
+}
+
+// SetExpiration sets the token expiration date
+func (t *Token) SetExpiration() error {
+	expires := t.CreatedAt.Add(storage.CookieMaxAge * time.Second)
+	pair := t.Cache.Z(float64(expires.Unix()), t.ID)
+
+	tx := t.Cache.TxPipeline()
+	tx.HSet(t.Key, t.dbField("ExpiresAt"), storage.TimeFormat(expires))
+	tx.ZAdd(SessionSetExpirationKey, pair)
+	_, err := tx.Exec()
+	if err != nil {
+		return err
+	}
+
+	t.ExpiresAt = expires
+
+	return nil
 }
 
 // UpdateLastUsed updates the LastUsedAt token information
