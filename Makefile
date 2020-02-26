@@ -1,7 +1,9 @@
 API := ./api
 API_BINARY := dist/api
+BUILD_FLAGS := -ldflags "-s -w"
 COVERAGE := coverage.out
 COVERAGE_REPORT := coverage.html
+IMAGE := myhro/ovh-checker
 MIGRATION_FOLDER := sql/migrations/
 NOTIFIER := ./cmd/notifier
 NOTIFIER_BINARY := dist/notifier
@@ -10,6 +12,7 @@ SESSION_CLEANER := ./cmd/session-cleaner
 SESSION_CLEANER_BINARY := dist/session-cleaner
 UPDATER := ./cmd/updater
 UPDATER_BINARY := dist/updater
+VERSION := $(shell git rev-parse --short HEAD)
 
 export GOBIN := $(PWD)/.bin
 
@@ -21,16 +24,16 @@ api:
 build: build-api build-notifier build-session-cleaner build-updater
 
 build-api:
-	go build -o $(API_BINARY) $(API)
+	go build $(BUILD_FLAGS) -o $(API_BINARY) $(API)
 
 build-notifier:
-	go build -o $(NOTIFIER_BINARY) $(NOTIFIER)
+	go build $(BUILD_FLAGS) -o $(NOTIFIER_BINARY) $(NOTIFIER)
 
 build-session-cleaner:
-	go build -o $(SESSION_CLEANER_BINARY) $(SESSION_CLEANER)
+	go build $(BUILD_FLAGS) -o $(SESSION_CLEANER_BINARY) $(SESSION_CLEANER)
 
 build-updater:
-	go build -o $(UPDATER_BINARY) $(UPDATER)
+	go build $(BUILD_FLAGS) -o $(UPDATER_BINARY) $(UPDATER)
 
 clean:
 	go clean -testcache
@@ -49,6 +52,9 @@ deps:
 destroy:
 	@$(GOBIN)/migrate -database $(POSTGRES_URL) -path $(MIGRATION_FOLDER) down
 
+docker:
+	docker build -t $(IMAGE) .
+
 lint:
 	@$(GOBIN)/golint -set_exit_status ./...
 
@@ -57,6 +63,11 @@ migrate:
 
 notifier:
 	go run $(NOTIFIER)
+
+push:
+	docker tag $(IMAGE):latest $(IMAGE):$(VERSION)
+	docker push $(IMAGE):$(VERSION)
+	docker push $(IMAGE):latest
 
 session-cleaner:
 	go run $(SESSION_CLEANER)
