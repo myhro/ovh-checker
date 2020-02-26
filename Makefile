@@ -6,6 +6,8 @@ MIGRATION_FOLDER := sql/migrations/
 NOTIFIER := ./cmd/notifier
 NOTIFIER_BINARY := dist/notifier
 POSTGRES_URL ?= postgres:///ovh?sslmode=disable
+SESSION_CLEANER := ./cmd/session-cleaner
+SESSION_CLEANER_BINARY := dist/session-cleaner
 UPDATER := ./cmd/updater
 UPDATER_BINARY := dist/updater
 
@@ -16,13 +18,16 @@ export GOBIN := $(PWD)/.bin
 api:
 	go run $(API)
 
-build: build-api build-notifier build-updater
+build: build-api build-notifier build-session-cleaner build-updater
 
 build-api:
 	go build -o $(API_BINARY) $(API)
 
 build-notifier:
 	go build -o $(NOTIFIER_BINARY) $(NOTIFIER)
+
+build-session-cleaner:
+	go build -o $(SESSION_CLEANER_BINARY) $(SESSION_CLEANER)
 
 build-updater:
 	go build -o $(UPDATER_BINARY) $(UPDATER)
@@ -52,6 +57,9 @@ migrate:
 
 notifier:
 	go run $(NOTIFIER)
+
+session-cleaner:
+	go run $(SESSION_CLEANER)
 
 test: test-all coverage
 

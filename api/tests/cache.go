@@ -10,6 +10,12 @@ type MockedCache struct {
 	mock.Mock
 }
 
+// HGet mocks the same redis.Client method
+func (m *MockedCache) HGet(key, field string) (string, error) {
+	args := m.Called(key, field)
+	return args.String(0), args.Error(1)
+}
+
 // HGetAll mocks the same redis.Client method
 func (m *MockedCache) HGetAll(key string) (map[string]string, error) {
 	args := m.Called(key)
@@ -48,4 +54,9 @@ func (m *MockedCache) TxPipeline() redis.Pipeliner {
 // Z mocks the redis.Z struct
 func (m *MockedCache) Z(score float64, member interface{}) redis.Z {
 	return redis.Z{}
+}
+
+func (m *MockedCache) ZRangeByScore(key string, opt redis.ZRangeBy) ([]string, error) {
+	args := m.Called(key, opt)
+	return args[0].([]string), args.Error(1)
 }

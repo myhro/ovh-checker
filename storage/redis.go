@@ -9,6 +9,11 @@ type Redis struct {
 	Client *redis.Client
 }
 
+// HGet wraps the same redis.Client method
+func (r *Redis) HGet(key, field string) (string, error) {
+	return r.Client.HGet(key, field).Result()
+}
+
 // HGetAll wraps the same redis.Client method
 func (r *Redis) HGetAll(key string) (map[string]string, error) {
 	return r.Client.HGetAll(key).Result()
@@ -51,4 +56,9 @@ func (r *Redis) Z(score float64, member interface{}) redis.Z {
 		Member: member,
 	}
 	return z
+}
+
+// ZRangeByScore wraps the same redis.Client method
+func (r *Redis) ZRangeByScore(key string, opt redis.ZRangeBy) ([]string, error) {
+	return r.Client.ZRangeByScore(key, opt).Result()
 }

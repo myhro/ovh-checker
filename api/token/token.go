@@ -44,6 +44,41 @@ type Token struct {
 	LastUsedAt time.Time `db:"last_used_at" json:"last_used_at"`
 }
 
+func AuthTokenKey(tokenID string) string {
+	return key(Auth, tokenID)
+}
+
+func AuthTokenSetKey(userID int) string {
+	return setKey(Auth, userID)
+}
+
+func key(tt Type, tokenID string) string {
+	return fmt.Sprintf("token-%v:%v", prefix(tt), tokenID)
+}
+
+func prefix(tt Type) string {
+	var prefix string
+	switch tt {
+	case Auth:
+		prefix = AuthPrefix
+	case Session:
+		prefix = SessionPrefix
+	}
+	return prefix
+}
+
+func setKey(tt Type, userID int) string {
+	return fmt.Sprintf("user:%v:tokenset-%v", userID, prefix(tt))
+}
+
+func SessionTokenKey(tokenID string) string {
+	return key(Session, tokenID)
+}
+
+func SessionTokenSetKey(userID int) string {
+	return setKey(Session, userID)
+}
+
 // Count returns how many tokens are part of its set
 func (t *Token) Count() (int64, error) {
 	count, err := t.Cache.SCard(t.SetKey)
@@ -77,15 +112,8 @@ func (t *Token) dbField(f string) string {
 }
 
 func (t *Token) keys() {
-	var prefix string
-	switch t.Type {
-	case Auth:
-		prefix = AuthPrefix
-	case Session:
-		prefix = SessionPrefix
-	}
-	t.Key = fmt.Sprintf("token-%v:%v", prefix, t.ID)
-	t.SetKey = fmt.Sprintf("user:%v:tokenset-%v", t.UserID, prefix)
+	t.Key = key(t.Type, t.ID)
+	t.SetKey = setKey(t.Type, t.UserID)
 }
 
 // Save adds a token to storage
