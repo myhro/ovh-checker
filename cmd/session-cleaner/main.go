@@ -23,10 +23,7 @@ func sleep() {
 }
 
 func main() {
-	cache, err := storage.NewCache()
-	if err != nil {
-		log.Fatal(err)
-	}
+	cache := storage.NewCache()
 
 	for {
 		now := fmt.Sprintf("%v", storage.Now().Unix())

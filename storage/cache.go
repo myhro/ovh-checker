@@ -20,7 +20,7 @@ type Cache interface {
 }
 
 // NewCache creates a wrapped Redis client
-func NewCache() (*Redis, error) {
+func NewCache() *Redis {
 	addr := os.Getenv("REDIS_ADDR")
 	if addr == "" {
 		addr = "localhost:6379"
@@ -32,10 +32,6 @@ func NewCache() (*Redis, error) {
 	cache := &Redis{
 		Client: redis.NewClient(opts),
 	}
-	_, err := cache.Ping()
-	if err != nil {
-		return nil, err
-	}
 
-	return cache, nil
+	return cache
 }

@@ -21,10 +21,7 @@ type API struct {
 }
 
 func main() {
-	cache, err := storage.NewCache()
-	if err != nil {
-		log.Fatal("cache: ", err)
-	}
+	cache := storage.NewCache()
 
 	db, err := storage.NewDB()
 	if err != nil {
