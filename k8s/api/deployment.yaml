@@ -12,6 +12,16 @@ spec:
       labels:
         app: ovh-checker-<ENV>-api
     spec:
+      initContainers:
+        - name: migrate
+          image: myhro/ovh-checker:<VERSION>
+          command:
+            - sh
+            - -c
+            - cd /app && make migrate
+          env:
+            - name: POSTGRES_URL
+              value: postgres://ovh-checker-<ENV>-postgres/ovh?sslmode=disable
       containers:
         - name: api
           image: myhro/ovh-checker:<VERSION>

@@ -18,13 +18,13 @@ spec:
           command:
             - /app/notifier
           env:
-            - name: POSTGRES_CONN
-              value: dbname=ovh host=ovh-checker-<ENV>-postgres sslmode=disable
             - name: OVH_CHECKER_EMAIL
               valueFrom:
                 secretKeyRef:
                   name: ovh-checker-<ENV>
                   key: ovh-checker-email
+            - name: POSTGRES_CONN
+              value: dbname=ovh host=ovh-checker-<ENV>-postgres sslmode=disable
             - name: SENDGRID_API_KEY
               valueFrom:
                 secretKeyRef:
