@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/myhro/ovh-checker/api/auth"
 	"github.com/myhro/ovh-checker/api/hardware"
+	"github.com/myhro/ovh-checker/api/notification"
 	"github.com/myhro/ovh-checker/storage"
 )
 
@@ -66,4 +67,10 @@ func (a *API) loadRoutes() {
 		log.Fatal("hardware: ", err)
 	}
 	a.router.GET("/hardware/offers", hardwareHandler.Offers)
+
+	notificationHandler, err := notification.NewHandler(a.db)
+	if err != nil {
+		log.Fatal("notification: ", err)
+	}
+	a.router.POST("/notification", authHandler.AuthRequired, notificationHandler.Notification)
 }

@@ -1,12 +1,11 @@
 -- name: add-notification
 INSERT INTO notification (auth_id, server_id, country_id, recurrent)
-  SELECT auth.id, server.id, country.id, recurrent
+  SELECT auth_id, server.id, country.id, recurrent
     FROM (
       VALUES
-        ($1, $2, $3, $4::BOOLEAN)
+        ($1::INTEGER, $2, $3, $4::BOOLEAN)
     )
-    AS data(email, server, country, recurrent)
-    JOIN auth ON auth.email = data.email
+    AS data(auth_id, server, country, recurrent)
     JOIN server ON server.name = data.server
     JOIN country ON country.code = data.country
 ;

@@ -38,8 +38,8 @@ func (s *NotificationTestSuite) TearDownTest() {
 }
 
 func (s *NotificationTestSuite) TestAddNotification() {
-	email := addRandomUser()
-	res, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "ca", false)
+	id := addRandomUser()
+	res, err := s.db.Exec(s.queries["add-notification"], id, "KS-1", "ca", false)
 	assert.NoError(s.T(), err)
 
 	rows, err := res.RowsAffected()
@@ -48,10 +48,10 @@ func (s *NotificationTestSuite) TestAddNotification() {
 }
 
 func (s *NotificationTestSuite) TestPendingNotification() {
-	email := addRandomUser()
-	_, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "fr", false)
+	id := addRandomUser()
+	_, err := s.db.Exec(s.queries["add-notification"], id, "KS-1", "fr", false)
 	assert.NoError(s.T(), err)
-	_, err = s.db.Exec(s.queries["add-notification"], email, "KS-2", "fr", false)
+	_, err = s.db.Exec(s.queries["add-notification"], id, "KS-2", "fr", false)
 	assert.NoError(s.T(), err)
 
 	loadOffers("ks-1-eu.json")
@@ -63,8 +63,8 @@ func (s *NotificationTestSuite) TestPendingNotification() {
 }
 
 func (s *NotificationTestSuite) TestMarkedAsSentNotification() {
-	email := addRandomUser()
-	_, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "fr", false)
+	id := addRandomUser()
+	_, err := s.db.Exec(s.queries["add-notification"], id, "KS-1", "fr", false)
 	assert.NoError(s.T(), err)
 
 	loadOffers("ks-1-eu.json")
@@ -84,8 +84,9 @@ func (s *NotificationTestSuite) TestMarkedAsSentNotification() {
 }
 
 func (s *NotificationTestSuite) TestRecurrentNotification() {
-	email := addRandomUser()
-	_, err := s.db.Exec(s.queries["add-notification"], email, "KS-1", "fr", true)
+	id := addRandomUser()
+
+	_, err := s.db.Exec(s.queries["add-notification"], id, "KS-1", "fr", true)
 	assert.NoError(s.T(), err)
 
 	loadOffers("ks-1-unavailable.json")
@@ -96,7 +97,7 @@ func (s *NotificationTestSuite) TestRecurrentNotification() {
 	assert.Equal(s.T(), 0, len(res1))
 
 	hourAgo := time.Now().UTC().Add(-1 * time.Hour)
-	_, err = s.db.Exec(s.queries["mark-as-sent"], hourAgo, 1)
+	_, err = s.db.Exec(s.queries["mark-as-sent"], hourAgo, id)
 	assert.NoError(s.T(), err)
 
 	res2 := []notification.PendingNotification{}
@@ -110,4 +111,15 @@ func (s *NotificationTestSuite) TestRecurrentNotification() {
 	err = s.db.Select(&res3, s.queries["pending-notifications"])
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, len(res3))
+}
+
+func (s *NotificationTestSuite) TestRepeatedNotification() {
+	id := addRandomUser()
+
+	_, err := s.db.Exec(s.queries["add-notification"], id, "KS-1", "fr", false)
+	assert.NoError(s.T(), err)
+
+	_, err = s.db.Exec(s.queries["add-notification"], id, "KS-1", "fr", false)
+	assert.Error(s.T(), err)
+	assert.True(s.T(), storage.ErrUniqueViolation(err))
 }

@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS offer (
   datacenter_id INTEGER REFERENCES datacenter(id),
   status TEXT,
   updated_at TIMESTAMP WITH TIME ZONE,
-  UNIQUE(hardware_id, datacenter_id)
+  UNIQUE (hardware_id, datacenter_id)
 );
