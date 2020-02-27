@@ -3,17 +3,18 @@ FROM golang:1.14-alpine AS builder
 RUN apk add make upx
 WORKDIR /app
 COPY . /app
+RUN make deps
 RUN make build
-RUN upx dist/*
+RUN upx .bin/migrate dist/*
 
 FROM alpine:latest
 
+RUN apk add make
+
 WORKDIR /app
 
-COPY --from=builder /app/dist/api /app/api
-COPY --from=builder /app/dist/notifier /app/notifier
-COPY --from=builder /app/dist/session-cleaner /app/session-cleaner
-COPY --from=builder /app/dist/updater /app/updater
+COPY --from=builder /app/dist/* /app/
+COPY --from=builder /app/.bin/migrate /app/.bin/
 
 COPY ./Makefile /app/Makefile
 COPY ./go.mod /app/go.mod

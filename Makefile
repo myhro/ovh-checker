@@ -17,7 +17,7 @@ VERSION ?= $(shell git rev-parse --short HEAD)
 
 export GOBIN := $(PWD)/.bin
 
-.PHONY: api
+.PHONY: api migrate
 
 api:
 	go run $(API)
