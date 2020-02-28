@@ -3,7 +3,6 @@ package errors
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,29 +34,4 @@ func UnauthorizedWithMessage(c *gin.Context, msg string) {
 	}
 
 	c.AbortWithStatusJSON(http.StatusUnauthorized, body)
-}
-
-// ValidationMessage turns a validation error into a more user-friendly message
-func ValidationMessage(e error) string {
-	errorList := []string{
-		"Error:",
-		"strconv.ParseInt:",
-	}
-
-	firstLine := strings.Split(e.Error(), "\n")[0]
-	msg := firstLine
-	for _, elem := range errorList {
-		if strings.Contains(msg, elem) {
-			msg = strings.Split(msg, elem)[1]
-			break
-		}
-	}
-	if msg == "EOF" || strings.HasPrefix(msg, "invalid character") {
-		msg = "invalid JSON"
-	} else if msg == firstLine {
-		msg = "unknown error"
-	}
-	msg = strings.ToLower(msg)
-
-	return strings.TrimSpace(msg)
 }
